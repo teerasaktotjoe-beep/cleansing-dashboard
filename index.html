@@ -1,0 +1,1810 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <base target="_top">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>แดชบอร์ดติดตามงาน Cleansing RD03 อป.</title>
+  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <!-- ไลบรารีสำหรับ Export Excel (.xlsx) และ PowerPoint (.pptx) -->
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/gitbrent/pptxgenjs@3.12.0/dist/pptxgen.bundle.js"></script>
+  <style>
+    :root {
+      --bg-main: #242830;
+      --bg-card: #303640;
+      --bg-card-hover: #3A424D;
+      --accent-yellow: #E5C15A;
+      --accent-blue: #B7C0CA;
+      --accent-green: #A8B89A;
+      --accent-red: #EF476F;
+      --text-main: #FFFFFF;
+      --text-muted: #B5BBC4;
+      --border-color: rgba(255, 255, 255, 0.08);
+    }
+    * { box-sizing: border-box; font-family: 'Prompt', sans-serif; }
+    body { background-color: var(--bg-main); color: var(--text-main); margin: 0; padding: 20px; font-size: 14px; }
+    .app-header { background: linear-gradient(135deg, #303640 0%, #242830 100%); border: 1px solid var(--border-color); border-left: 5px solid var(--accent-yellow); padding: 15px 25px; border-radius: 12px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 15px; box-shadow: 0 8px 24px rgba(0,0,0,0.3); margin-bottom: 20px; }
+    .header-brand { display: flex; align-items: center; gap: 15px; }
+    .mascot-avatar { width: 50px; height: 50px; background: var(--accent-yellow); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; color: #000; font-size: 18px; box-shadow: 0 0 15px rgba(255, 199, 44, 0.4); }
+    .header-title h1 { margin: 0; font-size: 20px; font-weight: 600; color: #FFF; }
+    .header-title p { margin: 2px 0 0 0; font-size: 12px; color: var(--text-muted); }
+
+    .export-wrapper { position: relative; display: inline-block; }
+    .btn-export-main { background: linear-gradient(135deg, #E5C15A 0%, #D4A838 100%); color: #111827; border: none; padding: 10px 18px; border-radius: 8px; font-size: 13px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 12px rgba(229, 193, 90, 0.3); transition: 0.2s; }
+    .btn-export-main:hover { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(229, 193, 90, 0.45); }
+    .export-dropdown { display: none; position: absolute; right: 0; top: 115%; background: #303640; border: 1px solid rgba(255,255,255,0.15); border-radius: 10px; min-width: 230px; box-shadow: 0 12px 30px rgba(0,0,0,0.6); z-index: 1000; overflow: hidden; }
+    .export-dropdown.show { display: block; }
+    .export-item { width: 100%; background: transparent; border: none; border-bottom: 1px solid rgba(255,255,255,0.06); color: #FFF; padding: 12px 16px; text-align: left; font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 10px; transition: 0.15s; }
+    .export-item:last-child { border-bottom: none; }
+    .export-item:hover { background: #3A424D; color: var(--accent-yellow); }
+    
+    .kpi-container { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 20px; }
+    .kpi-card { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 12px; padding: 18px; position: relative; overflow: hidden; }
+    .kpi-card::before { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 3px; background: var(--accent-blue); z-index: 3; }
+    .kpi-card.yellow::before { background: var(--accent-yellow); }
+    .kpi-card.green::before { background: var(--accent-green); }
+    .kpi-card.red::before { background: var(--accent-red); }
+    .kpi-label { font-size: 12px; color: var(--text-muted); font-weight: 500; }
+    .kpi-value { font-size: 28px; font-weight: 700; margin: 8px 0; color: #FFF; }
+    .kpi-sub { font-size: 11px; color: var(--text-muted); }
+
+    .compare-box { background: rgba(0,0,0,0.3); padding: 8px; border-radius: 6px; margin-top: 6px; font-size: 11px; }
+    .compare-row { display: flex; justify-content: space-between; margin-bottom: 4px; align-items: center; }
+
+    .dashboard-layout { display: grid; grid-template-columns: 340px 1fr; gap: 20px; }
+    .panel-card { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 12px; padding: 20px; margin-bottom: 20px; }
+    .panel-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; cursor: pointer; user-select: none; }
+    .panel-title { font-size: 15px; font-weight: 600; color: var(--accent-yellow); display: flex; align-items: center; gap: 8px; }
+    
+    .filter-group { margin-bottom: 15px; }
+    .filter-label { font-size: 12px; color: var(--text-muted); margin-bottom: 6px; display: block; font-weight: 500; }
+    .filter-select, .filter-input { width: 100%; background: #242830; border: 1px solid var(--border-color); color: #FFF; padding: 9px 12px; border-radius: 8px; font-size: 13px; outline: none; }
+    .filter-select:focus, .filter-input:focus { border-color: var(--accent-yellow); }
+    .btn-sm { padding: 6px 12px; border-radius: 6px; border: none; font-size: 12px; font-weight: 500; cursor: pointer; background: var(--accent-yellow); color: #000; width: 100%; }
+
+    .batch-btn { background: rgba(239, 71, 111, 0.2); border: 1px solid var(--accent-red); color: var(--accent-red); font-size: 11px; padding: 4px 10px; border-radius: 6px; cursor: pointer; font-weight: 500; transition: 0.2s; }
+    .batch-btn:hover { background: var(--accent-red); color: #FFF; }
+    .batch-btn-cancel { background: rgba(141, 153, 174, 0.2); border: 1px solid var(--text-muted); color: var(--text-muted); font-size: 11px; padding: 4px 10px; border-radius: 6px; cursor: pointer; font-weight: 500; transition: 0.2s; }
+    .batch-btn-cancel:hover { background: var(--text-muted); color: #000; }
+
+    .charts-stack { display: flex; flex-direction: column; gap: 20px; }
+    .chart-box { background: #242830; border-radius: 8px; padding: 15px; border: 1px solid var(--border-color); height: 340px; display: flex; flex-direction: column; justify-content: center; }
+    .chart-title { font-size: 13px; font-weight: 600; color: var(--accent-yellow); margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
+
+    .table-responsive { overflow-x: auto; margin-top: 10px; }
+    .custom-table { width: 100%; border-collapse: collapse; text-align: left; font-size: 12px; }
+    .custom-table th { background: #242830; color: var(--text-muted); padding: 12px; font-weight: 500; border-bottom: 1px solid var(--border-color); white-space: nowrap; }
+    .custom-table td { padding: 10px 12px; border-bottom: 1px solid var(--border-color); vertical-align: middle; }
+    .custom-table tbody tr:hover { background: var(--bg-card-hover); }
+
+    .status-select { padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; border: none; cursor: pointer; outline: none; }
+    .status-active { background: rgba(6, 214, 160, 0.15); color: var(--accent-green); border: 1px solid var(--accent-green); }
+    .status-removed { background: rgba(239, 71, 111, 0.15); color: var(--accent-red); border: 1px solid var(--accent-red); }
+    .tag-badge { font-family: monospace; background: #242830; padding: 2px 6px; border-radius: 4px; color: var(--accent-blue); }
+
+    .loading-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(11, 19, 43, 0.85); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 999; }
+    .spinner { width: 40px; height: 40px; border: 4px solid rgba(255,199,44,0.1); border-left-color: var(--accent-yellow); border-radius: 50%; animation: spin 1s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+
+  <div id="loading" class="loading-overlay">
+    <div class="spinner"></div>
+    <p style="margin-top: 15px; font-weight: 500; color: var(--accent-yellow);">กำลังโหลดข้อมูลสายพาดสื่อสาร อป. ...</p>
+  </div>
+
+  <header class="app-header">
+    <div class="header-brand">
+      <div class="mascot-avatar">NT</div>
+      <div class="header-title">
+        <h1>แดชบอร์ดติดตามงาน Cleansing RD03 อป.</h1>
+        <p>ระบบบริหารจัดการและติดตามการรื้อถอนสายพาดสื่อสารแยกรายจังหวัดและเขตการไฟฟ้า</p>
+      </div>
+    </div>
+
+    <div class="export-wrapper">
+      <button type="button" class="btn-export-main" onclick="toggleExportMenu(event)">
+        <span>📥</span> Export ข้อมูลสรุปนำเสนอ <span>▼</span>
+      </button>
+      <div id="exportDropdownMenu" class="export-dropdown">
+        <button type="button" class="export-item" onclick="exportSummaryReport('pdf')">
+          <span style="font-size: 16px;">📄</span>
+          <div>
+            <div style="font-weight: 600;">ส่งออกเป็น PDF</div>
+            <div style="font-size: 11px; color: var(--text-muted);">รายงานสรุปพร้อมพิมพ์ / บันทึก PDF</div>
+          </div>
+        </button>
+        <button type="button" class="export-item" onclick="exportSummaryReport('excel')">
+          <span style="font-size: 16px;">📊</span>
+          <div>
+            <div style="font-weight: 600;">ส่งออกเป็น Excel (.xlsx)</div>
+            <div style="font-size: 11px; color: var(--text-muted);">แยกชีต KPI, สรุปพื้นที่, รายละเอียด</div>
+          </div>
+        </button>
+        <button type="button" class="export-item" onclick="exportSummaryReport('ppt')">
+          <span style="font-size: 16px;">📽️</span>
+          <div>
+            <div style="font-weight: 600;">ส่งออกเป็น PowerPoint (.pptx)</div>
+            <div style="font-size: 11px; color: var(--text-muted);">สไลด์นำเสนอสรุปผลพร้อมประชุม</div>
+          </div>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <section class="kpi-container">
+    <!-- การ์ดที่ 1: เส้นทางทั้งหมด พร้อมปุ่มขยายนำเสนอ -->
+    <div class="kpi-card blue" style="position: relative; overflow: hidden;">
+      <div style="position: absolute; bottom: 0; left: 0; width: 100%; height: 50px; opacity: 0.25; pointer-events: none;">
+        <canvas id="miniChart1"></canvas>
+      </div>
+      <div class="kpi-label" style="display: flex; justify-content: space-between; align-items: center; position: relative; z-index: 2;">
+        <span>เส้นทางทั้งหมดในเงื่อนไข</span>
+        <button type="button" onclick="openTotalPresentationModal()" style="background: rgba(183, 192, 202, 0.15); color: #B7C0CA; border: 1px solid #B7C0CA; border-radius: 6px; padding: 3px 8px; font-size: 0.75rem; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;">
+          <span>🖥️</span> ขยายนำเสนอ
+        </button>
+      </div>
+      <div class="kpi-value" id="kpiTotal" style="position: relative; z-index: 2;">0</div>
+      <div class="kpi-sub" style="position: relative; z-index: 2;">เส้นทางพาดสายทั้งหมด</div>
+    </div>
+
+    <!-- การ์ดที่ 2: รื้อถอนแล้ว พร้อมปุ่มขยายนำเสนอ -->
+    <div class="kpi-card red" style="position: relative; overflow: hidden;">
+      <div style="position: absolute; bottom: 0; left: 0; width: 100%; height: 50px; opacity: 0.25; pointer-events: none;">
+        <canvas id="miniChart2"></canvas>
+      </div>
+      <div class="kpi-label" style="display: flex; justify-content: space-between; align-items: center; position: relative; z-index: 2;">
+        <span>จำนวนเส้นทางที่รื้อถอนแล้ว</span>
+        <button type="button" onclick="openRemovedPresentationModal()" style="background: rgba(239, 71, 111, 0.15); color: #EF476F; border: 1px solid #EF476F; border-radius: 6px; padding: 3px 8px; font-size: 0.75rem; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;">
+          <span>🖥️</span> ขยายนำเสนอ
+        </button>
+      </div>
+      <div class="kpi-value" id="kpiRemoved" style="color: var(--accent-red); position: relative; z-index: 2;">0</div>
+      <div class="kpi-sub" id="kpiRemovedPercent" style="position: relative; z-index: 2;">คิดเป็น 0% ของทั้งหมด</div>
+    </div>
+
+    <!-- การ์ดที่ 3: คงเหลือใช้งาน พร้อมปุ่มขยายนำเสนอ -->
+    <div class="kpi-card green" style="position: relative; overflow: hidden;">
+      <div style="position: absolute; bottom: 0; left: 0; width: 100%; height: 50px; opacity: 0.25; pointer-events: none;">
+        <canvas id="miniChart3"></canvas>
+      </div>
+      <div class="kpi-label" style="display: flex; justify-content: space-between; align-items: center; position: relative; z-index: 2;">
+        <span>เส้นทางคงเหลือ (ใช้งานอยู่)</span>
+        <button type="button" onclick="openRemainingPresentationModal()" style="background: rgba(168, 184, 154, 0.15); color: #A8B89A; border: 1px solid #A8B89A; border-radius: 6px; padding: 3px 8px; font-size: 0.75rem; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;">
+          <span>🖥️</span> ขยายนำเสนอ
+        </button>
+      </div>
+      <div class="kpi-value" id="kpiActive" style="color: var(--accent-green); position: relative; z-index: 2;">0</div>
+      <div class="kpi-sub" style="position: relative; z-index: 2;">ผ่านการ Cleansing แล้ว</div>
+    </div>
+
+    <!-- การ์ดที่ 4: งบประมาณ -->
+    <div class="kpi-card yellow" style="grid-column: span 1;">
+      <div class="kpi-label" style="display: flex; justify-content: space-between; align-items: center;">
+        <span>💰 งบ & เปรียบเทียบผลลัพธ์</span>
+        <button type="button" onclick="openBudgetPresentationModal()" style="background: rgba(251, 191, 36, 0.15); color: #fbbf24; border: 1px solid #fbbf24; border-radius: 6px; padding: 4px 10px; font-size: 0.78rem; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; margin-left: 10px;">
+          <span>🖥️</span> ขยายนำเสนอ
+        </button>
+      </div>
+      <div class="kpi-value" id="kpiCost" style="color: var(--accent-yellow); font-size: 20px; margin: 4px 0;">0.00 ฿</div>
+      
+      <div class="compare-box">
+        <table style="width: 100%; text-align: right; border-collapse: collapse; font-size: 11px;">
+          <thead>
+            <tr style="border-bottom: 1px solid rgba(255,255,255,0.1); color: var(--text-muted);">
+              <th style="text-align: left; padding-bottom: 4px;">มิติ</th>
+              <th><input type="number" id="yearCol1" value="2567" style="width: 48px; background: #242830; border: 1px solid var(--border-color); color: var(--accent-yellow); text-align: center; border-radius: 3px;" oninput="calculateCustomCompare()"></th>
+              <th><input type="number" id="yearCol2" value="2568" style="width: 48px; background: #242830; border: 1px solid var(--border-color); color: var(--accent-yellow); text-align: center; border-radius: 3px;" oninput="calculateCustomCompare()"> (ค่าแรก)</th>
+              <th style="color: var(--accent-green);">หลัง Cleansing</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td style="text-align: left; padding-top: 4px;"><b>งบ (บาท)</b></td>
+              <td><input type="number" id="valCol1" value="0" style="width: 78px; text-align: right; background: #242830; border: 1px solid var(--border-color); color: var(--accent-yellow); border-radius: 3px;" oninput="calculateCustomCompare()" placeholder="จาก Col E"></td>
+              <td><input type="number" id="valCol2" value="0" style="width: 78px; text-align: right; background: #242830; border: 1px solid var(--border-color); color: var(--accent-yellow); border-radius: 3px;" oninput="calculateCustomCompare()" placeholder="ค่าแรกเริ่ม"></td>
+              <td><b id="valAfterClean" style="color: var(--accent-green);">0</b></td>
+            </tr>
+            <tr style="border-top: 1px dashed rgba(255,255,255,0.1);">
+              <td style="text-align: left; padding-top: 4px; color: var(--text-muted);">จำนวนเส้นทาง</td>
+              <td><input type="number" id="routeCol1" value="0" style="width: 58px; text-align: right; background: #242830; border: 1px solid var(--border-color); color: var(--accent-blue); border-radius: 3px;" oninput="calculateCustomCompare()"></td>
+              <td><input type="number" id="routeCol2" value="0" style="width: 58px; text-align: right; background: #242830; border: 1px solid var(--border-color); color: var(--accent-blue); border-radius: 3px;" oninput="calculateCustomCompare()"></td>
+              <td><b id="routeAfterClean" style="color: var(--accent-blue);">0</b></td>
+            </tr>
+          </tbody>
+        </table>
+        
+        <div style="margin-top: 6px; border-top: 1px dashed rgba(255,255,255,0.15); padding-top: 4px; line-height: 1.4;">
+          <div class="compare-row">
+            <span>เทียบปี <span id="lblY1">2567</span>:</span>
+            <span id="diffY1" style="font-weight: 600; color: var(--accent-green);">0.00 (0%)</span>
+          </div>
+          <div class="compare-row">
+            <span>เส้นทาง ปี <span id="lblY1Route">2567</span>:</span>
+            <span id="diffRouteY1" style="font-weight: 600; color: var(--accent-blue);">0 (0%)</span>
+          </div>
+          <div class="compare-row" style="border-top: 1px dotted rgba(255,255,255,0.1); margin-top: 2px; padding-top: 2px;">
+            <span>เทียบค่าเริ่มแรก (<span id="lblY2">2568</span>):</span>
+            <span id="diffY2" style="font-weight: 600; color: var(--accent-green);">0.00 (0%)</span>
+          </div>
+          <div class="compare-row">
+            <span>เส้นทาง เริ่มแรก (<span id="lblY2Route">2568</span>):</span>
+            <span id="diffRouteY2" style="font-weight: 600; color: var(--accent-blue);">0 (0%)</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="dashboard-layout">
+    <aside>
+      <div class="panel-card">
+        <div class="panel-header" onclick="toggleCard('filterContent', 'iconFilter')">
+          <span class="panel-title">🔍 ตัวกรองข้อมูลเป็นสเตป (Filters)</span>
+          <span id="iconFilter" style="color: var(--accent-yellow); font-size: 14px;">[ซ่อน ▲]</span>
+        </div>
+        <div id="filterContent">
+          <div class="filter-group">
+            <label class="filter-label">1. ส่วนบริการ (จังหวัด)</label>
+            <select id="filterProvince" class="filter-select" onchange="onProvinceChange()"></select>
+          </div>
+
+          <div class="filter-group">
+            <label class="filter-label">2. เขตการไฟฟ้า (Link ตรงรายชีต)</label>
+            <select id="filterDistrict" class="filter-select" onchange="onDistrictChange()"></select>
+          </div>
+
+          <div class="filter-group">
+            <label class="filter-label">3. หน่วยงานสัมปทานหลัก</label>
+            <select id="filterConcession" class="filter-select" onchange="applyFilters()"></select>
+          </div>
+
+          <div class="filter-group">
+            <label class="filter-label">4. ประเภทสาย</label>
+            <select id="filterCableType" class="filter-select" onchange="applyFilters()"></select>
+          </div>
+
+          <div class="filter-group">
+            <label class="filter-label">ค้นหา Tag / ชื่อเส้นทาง</label>
+            <input type="text" id="searchTag" class="filter-input" placeholder="พิมพ์ค้นหา..." onkeyup="applyFilters()">
+          </div>
+
+          <div class="btn-action-group">
+            <button class="btn-sm" onclick="resetFilters()">🔄 ล้างตัวกรองทั้งหมด</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel-card">
+        <div class="panel-header" style="display: flex; justify-content: space-between; align-items: center;">
+          <div onclick="toggleCard('copperContent', 'iconCopper')" style="cursor: pointer; display: flex; align-items: center; gap: 8px;">
+            <span class="panel-title" style="color: var(--accent-blue);">⚖️ ทองแดงที่ถูกรื้อถอน</span>
+            <span id="iconCopper" style="color: var(--accent-yellow); font-size: 14px;">[ซ่อน ▲]</span>
+          </div>
+          <button type="button" onclick="openCopperPresentationModal(); event.stopPropagation();" style="background: rgba(245, 158, 11, 0.15); color: #f59e0b; border: 1px solid #f59e0b; border-radius: 6px; padding: 3px 8px; font-size: 0.75rem; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;">
+            <span>🖥️</span> ขยายนำเสนอ
+          </button>
+        </div>
+
+        <div id="copperContent" style="text-align: center; padding: 10px 0;">
+          <div style="font-size: 11px; color: var(--text-muted);">ปริมาตรสายที่รื้อถอนออกไปแล้ว</div>
+          <div id="copperVolDisplay" style="font-size: 24px; font-weight: 700; color: var(--accent-blue); margin: 5px 0;">0.00 cm³</div>
+        </div>
+      </div>
+    </aside>
+
+    <main>
+      <div class="panel-card">
+        <div class="panel-header" style="display: flex; justify-content: space-between; align-items: center;">
+          <div onclick="toggleCard('chartContent', 'iconChart')" style="cursor: pointer; display: flex; align-items: center; gap: 8px;">
+            <span class="panel-title">📊 สถิติอัตราส่วนการรื้อถอนสายสื่อสาร</span>
+            <span id="iconChart" style="color: var(--accent-yellow); font-size: 14px;">[ซ่อน ▲]</span>
+          </div>
+          <button type="button" onclick="openRatioPresentationModal(); event.stopPropagation();" style="background: rgba(229, 193, 90, 0.15); color: #E5C15A; border: 1px solid #B99A45; border-radius: 6px; padding: 4px 10px; font-size: 0.78rem; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 5px;">
+            <span>🖥️</span> ขยายนำเสนอ
+          </button>
+        </div>
+
+        <div id="chartContent" class="charts-stack">
+          <div class="chart-box">
+            <div class="chart-title" style="color: var(--accent-yellow);">
+              <span>1. ส่วนบริการ (ภาพรวมรายจังหวัด พร้อม % การรื้อถอน)</span>
+            </div>
+            <div style="position: relative; flex: 1; min-height: 0;">
+              <canvas id="provinceBarChart"></canvas>
+            </div>
+          </div>
+
+          <div class="chart-box">
+            <div class="chart-title" id="barChartTitle">
+              <span>2. เขตไฟฟ้า (สัดส่วนรื้อถอนแยกตามเขตการไฟฟ้า พร้อม %)</span>
+            </div>
+            <div style="position: relative; flex: 1; min-height: 0;">
+              <canvas id="barChart"></canvas>
+            </div>
+          </div>
+
+          <div class="chart-box">
+            <div class="chart-title">
+              <span>3. ส่วนที่รื้อถอน (อัตราส่วนทองแดง, สัมปทาน และคงเหลือ พร้อม %)</span>
+            </div>
+            <div style="position: relative; flex: 1; min-height: 0;">
+              <canvas id="donutChart"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel-card">
+        <div class="panel-header" onclick="toggleCard('provinceSummaryContent', 'iconProv')">
+          <span class="panel-title">🏛️ ภาพรวมงบประมาณรายจังหวัด (ส่วนบริการ)</span>
+          <span id="iconProv" style="color: var(--accent-yellow); font-size: 14px;">[ซ่อน ▲]</span>
+        </div>
+        <div id="provinceSummaryContent" class="table-responsive">
+          <table class="custom-table">
+            <thead>
+              <tr>
+                <th>จังหวัด (ส่วนบริการ)</th>
+                <th style="text-align: right;">งบตั้งต้นรวม (Col E)</th>
+                <th style="text-align: right;">งบปัจจุบัน (หลัง Clean)</th>
+                <th style="text-align: right;">ส่วนต่าง (ประหยัด/เพิ่ม)</th>
+                <th style="text-align: center;">สถานะภาพรวม</th>
+              </tr>
+            </thead>
+            <tbody id="provinceSummaryTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="panel-card">
+        <div class="panel-header" onclick="toggleCard('districtSummaryContent', 'iconDist')">
+          <span class="panel-title">📈 ตารางสรุปงบประมาณเปรียบเทียบรายเขตการไฟฟ้า</span>
+          <span id="iconDist" style="color: var(--accent-yellow); font-size: 14px;">[ซ่อน ▲]</span>
+        </div>
+        <div id="districtSummaryContent" class="table-responsive">
+          <table class="custom-table">
+            <thead>
+              <tr>
+                <th>เขตการไฟฟ้า</th>
+                <th style="text-align: right;">งบตั้งต้น (Col E)</th>
+                <th style="text-align: right;">งบปัจจุบัน (หลัง Clean)</th>
+                <th style="text-align: right;">ส่วนต่าง (ประหยัด/เพิ่ม)</th>
+                <th style="text-align: center;">สถานะ</th>
+              </tr>
+            </thead>
+            <tbody id="summaryTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="panel-card" id="routeTableCard">
+        <div class="panel-header" style="display: flex; justify-content: space-between; align-items: center;">
+          <span class="panel-title" onclick="toggleCard('routeTableContent', 'iconRoute')" style="cursor: pointer; margin: 0;">
+            📋 รายละเอียดเส้นทางและการจัดการสถานะ <span id="iconRoute" style="color: var(--accent-yellow); font-size: 14px; margin-left: 10px;">[ซ่อน ▲]</span>
+          </span>
+          <div style="display: flex; gap: 8px; align-items: center;" onclick="event.stopPropagation();">
+            <button class="batch-btn" onclick="setAllFilteredStatus('รื้อถอนแล้ว')">🔴 รื้อถอนทั้งหมดตาม Filter</button>
+            <button class="batch-btn-cancel" onclick="setAllFilteredStatus('ใช้งานอยู่')">↩️ ยกเลิก / คืนค่าทั้งหมด</button>
+          </div>
+        </div>
+        <div id="routeTableContent" class="table-responsive">
+          <table class="custom-table">
+            <thead>
+              <tr>
+                <th style="width: 50px;">ลำดับ</th>
+                <th>จังหวัด / เขตการไฟฟ้า</th>
+                <th>ชื่อเส้นทาง / Tag ID</th>
+                <th>สัมปทาน</th>
+                <th>ประเภทสาย (Col G)</th>
+                <th style="text-align: center;">d (มม.)</th>
+                <th style="text-align: center;">p (เสาในพื้นที่)</th>
+                <th style="text-align: center;">ระยะทาง (กม.)</th>
+                <th style="text-align: right;">ค่าพาดสาย (บาท)</th>
+                <th style="text-align: center;">สถานะ</th>
+              </tr>
+            </thead>
+            <tbody id="tableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    let rawRoutes = [];
+    let areaMapping = {};
+    let districtBudgetMap = {};
+    let provinceBudgetMap = {};
+    let filteredRoutes = [];
+    let barChartObj, provinceBarChartObj, donutChartObj;
+    let miniChart1Obj, miniChart2Obj, miniChart3Obj;
+    let modalDonut1Obj, modalDonut2Obj, modalDonut3Obj;
+
+    window.onload = function() {
+      google.script.run
+        .withSuccessHandler(initDashboard)
+        .withFailureHandler(function(err) {
+          document.getElementById('loading').innerHTML = '<p style="color: var(--accent-red);">เกิดข้อผิดพลาดในการโหลดข้อมูล: ' + err.message + '</p>';
+        })
+        .getInitialData();
+    };
+
+    function toggleExportMenu(e) {
+      e.stopPropagation();
+      document.getElementById('exportDropdownMenu').classList.toggle('show');
+    }
+    window.addEventListener('click', function() {
+      let menu = document.getElementById('exportDropdownMenu');
+      if (menu && menu.classList.contains('show')) {
+        menu.classList.remove('show');
+      }
+    });
+
+    function toggleCard(contentId, iconId) {
+      let contentEl = document.getElementById(contentId);
+      let iconEl = document.getElementById(iconId);
+      if (contentEl.style.display === 'none') {
+        contentEl.style.display = 'block';
+        iconEl.innerHTML = '[ซ่อน ▲]';
+      } else {
+        contentEl.style.display = 'none';
+        iconEl.innerHTML = '[แสดง ▼]';
+      }
+    }
+
+    function initDashboard(data) {
+      if (!data || !data.routes) {
+        document.getElementById('loading').innerHTML = '<p style="color: var(--accent-red);">ไม่พบข้อมูลในระบบ กรุณาตรวจสอบชื่อชีตหรือโครงสร้างข้อมูล</p>';
+        return;
+      }
+      rawRoutes = data.routes;
+      areaMapping = data.areaMapping || {};
+      districtBudgetMap = data.districtBudgetMap || {};
+      provinceBudgetMap = data.provinceBudgetMap || {};
+      populateProvinceDropdown();
+      document.getElementById('loading').style.display = 'none';
+    }
+
+    function populateProvinceDropdown() {
+      let provSelect = document.getElementById('filterProvince');
+      provSelect.innerHTML = '<option value="ALL">-- ทุกจังหวัด (สเตป 1) --</option>';
+      Object.keys(areaMapping).forEach(prov => {
+        provSelect.innerHTML += '<option value="' + prov + '">' + prov + '</option>';
+      });
+      onProvinceChange();
+    }
+
+    function onProvinceChange() {
+      let selectedProv = document.getElementById('filterProvince').value;
+      let districtSelect = document.getElementById('filterDistrict');
+      districtSelect.innerHTML = '<option value="ALL">-- ทุกเขตการไฟฟ้า (สเตป 2) --</option>';
+
+      let matchedDistricts = [];
+      Object.keys(areaMapping).forEach(p => {
+        if (selectedProv === 'ALL' || p === selectedProv) {
+          matchedDistricts.push(...areaMapping[p]);
+        }
+      });
+
+      Array.from(new Set(matchedDistricts)).forEach(d => {
+        districtSelect.innerHTML += '<option value="' + d + '">' + d + '</option>';
+      });
+      
+      onDistrictChange();
+    }
+
+    function onDistrictChange() {
+      let selectedProv = document.getElementById('filterProvince').value;
+      let selectedDistrict = document.getElementById('filterDistrict').value;
+
+      let scopeRoutes = rawRoutes.filter(r => {
+        let matchP = (selectedProv === 'ALL' || r.province === selectedProv);
+        let matchD = (selectedDistrict === 'ALL' || r.district === selectedDistrict || r.district.indexOf(selectedDistrict) !== -1 || selectedDistrict.indexOf(r.district) !== -1);
+        return matchP && matchD;
+      });
+
+      let concs = [...new Set(scopeRoutes.map(r => r.concession))];
+      let concSelect = document.getElementById('filterConcession');
+      concSelect.innerHTML = '<option value="ALL">-- ทุกสัมปทานหลัก (สเตป 3) --</option>';
+      concs.forEach(c => concSelect.innerHTML += '<option value="' + c + '">' + c + '</option>');
+
+      let cables = [...new Set(scopeRoutes.map(r => r.cableType))];
+      let cableSelect = document.getElementById('filterCableType');
+      cableSelect.innerHTML = '<option value="ALL">-- ทุกประเภทสาย (สเตป 4) --</option>';
+      cables.forEach(cb => cableSelect.innerHTML += '<option value="' + cb + '">' + cb + '</option>');
+
+      applyFilters();
+    }
+
+    function getActiveFilterDescription() {
+      let prov = document.getElementById('filterProvince').value;
+      let dist = document.getElementById('filterDistrict').value;
+      let conc = document.getElementById('filterConcession').value;
+      let cable = document.getElementById('filterCableType').value;
+
+      let parts = [];
+      parts.push(prov === 'ALL' ? 'ทุกจังหวัด' : 'จังหวัด ' + prov);
+      if (dist !== 'ALL') parts.push('เขต ' + dist);
+      if (conc !== 'ALL') parts.push('สัมปทาน ' + conc);
+      if (cable !== 'ALL') parts.push('สาย ' + cable);
+      return 'ขอบเขตข้อมูล: ' + parts.join(' / ');
+    }
+
+    function applyFilters() {
+      let prov = document.getElementById('filterProvince').value;
+      let dist = document.getElementById('filterDistrict').value;
+      let conc = document.getElementById('filterConcession').value;
+      let cable = document.getElementById('filterCableType').value;
+      let search = document.getElementById('searchTag').value.toLowerCase();
+
+      filteredRoutes = rawRoutes.filter(r => {
+        let matchP = (prov === 'ALL' || r.province === prov);
+        let matchD = (dist === 'ALL' || r.district === dist || r.district.indexOf(dist) !== -1 || dist.indexOf(r.district) !== -1);
+        let matchC = (conc === 'ALL' || r.concession === conc);
+        let matchCb = (cable === 'ALL' || r.cableType === cable);
+        let matchSearch = !search || r.tagID.toLowerCase().indexOf(search) !== -1 || r.routeName.toLowerCase().indexOf(search) !== -1;
+        
+        return matchP && matchD && matchC && matchCb && matchSearch;
+      });
+
+      renderKPIs();
+      renderProvinceSummaryTable();
+      renderSummaryTable();
+      renderTable();
+      renderCharts();
+    }
+
+    function renderKPIs() {
+      let total = filteredRoutes.length;
+      let removed = filteredRoutes.filter(r => r.status === 'รื้อถอนแล้ว').length;
+      let active = total - removed;
+      
+      let activeCost = filteredRoutes.filter(r => r.status === 'ใช้งานอยู่').reduce((sum, r) => sum + r.cost, 0);
+      let removedCopperVol = filteredRoutes.filter(r => r.status === 'รื้อถอนแล้ว').reduce((sum, r) => sum + r.copperVolume, 0);
+
+      let selectedProv = document.getElementById('filterProvince').value;
+      let selectedDist = document.getElementById('filterDistrict').value;
+      let totalBudgetColE = 0;
+      
+      if (selectedDist !== 'ALL') {
+        totalBudgetColE = districtBudgetMap[selectedDist] || 0;
+      } else if (selectedProv !== 'ALL') {
+        totalBudgetColE = provinceBudgetMap[selectedProv] || 0;
+      } else {
+        Object.values(provinceBudgetMap).forEach(b => totalBudgetColE += b);
+      }
+
+      document.getElementById('kpiTotal').innerText = total.toLocaleString();
+      document.getElementById('kpiRemoved').innerText = removed.toLocaleString();
+      document.getElementById('kpiActive').innerText = active.toLocaleString();
+      document.getElementById('kpiCost').innerText = activeCost.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2}) + ' ฿';
+      
+      let valCol1Input = document.getElementById('valCol1');
+      if (document.activeElement !== valCol1Input && (valCol1Input.value == "0" || valCol1Input.value === "")) {
+        valCol1Input.value = Math.round(totalBudgetColE);
+      }
+
+      let valCol2Input = document.getElementById('valCol2');
+      let totalInitialCost = filteredRoutes.reduce((sum, r) => sum + r.cost, 0);
+      if (document.activeElement !== valCol2Input && (valCol2Input.value == "0" || valCol2Input.value === "")) {
+        valCol2Input.value = Math.round(totalInitialCost);
+      }
+
+      let routeCol1Input = document.getElementById('routeCol1');
+      if (document.activeElement !== routeCol1Input && (routeCol1Input.value == "0" || routeCol1Input.value === "")) {
+        routeCol1Input.value = total;
+      }
+
+      let routeCol2Input = document.getElementById('routeCol2');
+      if (document.activeElement !== routeCol2Input && (routeCol2Input.value == "0" || routeCol2Input.value === "")) {
+        routeCol2Input.value = total;
+      }
+
+      document.getElementById('valAfterClean').innerText = activeCost.toLocaleString(undefined, {maximumFractionDigits:2});
+      document.getElementById('routeAfterClean').innerText = active.toLocaleString() + ' เส้นทาง';
+
+      let removedPct = total > 0 ? ((removed / total) * 100).toFixed(1) : 0;
+      document.getElementById('kpiRemovedPercent').innerText = 'คิดเป็น ' + removedPct + '% ของทั้งหมด';
+      document.getElementById('copperVolDisplay').innerText = (removedCopperVol / 1000).toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2}) + ' cm³';
+
+      calculateCustomCompare();
+      renderMiniCharts(total, removed, active);
+    }
+
+    function calculateCustomCompare() {
+      let y1 = document.getElementById('yearCol1').value;
+      let y2 = document.getElementById('yearCol2').value;
+      
+      document.getElementById('lblY1').innerText = y1;
+      document.getElementById('lblY1Route').innerText = y1;
+      document.getElementById('lblY2').innerText = y2;
+      document.getElementById('lblY2Route').innerText = y2;
+
+      let v1 = parseFloat(document.getElementById('valCol1').value) || 0;
+      let v2 = parseFloat(document.getElementById('valCol2').value) || 0;
+      let r1 = parseFloat(document.getElementById('routeCol1').value) || 0;
+      let r2 = parseFloat(document.getElementById('routeCol2').value) || 0;
+
+      let currentCost = filteredRoutes.filter(r => r.status === 'ใช้งานอยู่').reduce((sum, r) => sum + r.cost, 0);
+      let currentRouteCount = filteredRoutes.filter(r => r.status === 'ใช้งานอยู่').length;
+
+      let diff1 = currentCost - v1;
+      let pct1 = v1 > 0 ? ((diff1 / v1) * 100).toFixed(1) : 0;
+      let el1 = document.getElementById('diffY1');
+      el1.innerHTML = (diff1 <= 0 ? '🟢 ประหยัด ' : '🔴 เกินงบ +') + Math.abs(diff1).toLocaleString(undefined, {maximumFractionDigits:2}) + ' (' + pct1 + '%)';
+      el1.style.color = diff1 <= 0 ? 'var(--accent-green)' : 'var(--accent-red)';
+
+      let diffRoute1 = currentRouteCount - r1;
+      let pctRoute1 = r1 > 0 ? ((diffRoute1 / r1) * 100).toFixed(1) : 0;
+      let elRoute1 = document.getElementById('diffRouteY1');
+      elRoute1.innerHTML = (diffRoute1 <= 0 ? '🟢 ลดลง ' : '🔴 เพิ่มขึ้น +') + diffRoute1.toLocaleString() + ' (' + pctRoute1 + '%)';
+      elRoute1.style.color = diffRoute1 <= 0 ? 'var(--accent-green)' : 'var(--accent-red)';
+
+      let diff2 = currentCost - v2;
+      let pct2 = v2 > 0 ? ((diff2 / v2) * 100).toFixed(1) : 0;
+      let el2 = document.getElementById('diffY2');
+      el2.innerHTML = (diff2 <= 0 ? '🟢 ประหยัด ' : '🔴 เกินงบ +') + Math.abs(diff2).toLocaleString(undefined, {maximumFractionDigits:2}) + ' (' + pct2 + '%)';
+      el2.style.color = diff2 <= 0 ? 'var(--accent-green)' : 'var(--accent-red)';
+
+      let diffRoute2 = currentRouteCount - r2;
+      let pctRoute2 = r2 > 0 ? ((diffRoute2 / r2) * 100).toFixed(1) : 0;
+      let elRoute2 = document.getElementById('diffRouteY2');
+      elRoute2.innerHTML = (diffRoute2 <= 0 ? '🟢 ลดลง ' : '🔴 เพิ่มขึ้น +') + diffRoute2.toLocaleString() + ' (' + pctRoute2 + '%)';
+      elRoute2.style.color = diffRoute2 <= 0 ? 'var(--accent-green)' : 'var(--accent-red)';
+    }
+
+    function renderProvinceSummaryTable() {
+      let tbody = document.getElementById('provinceSummaryTableBody');
+      tbody.innerHTML = '';
+
+      let provincesInScope = Object.keys(provinceBudgetMap);
+      let selectedProv = document.getElementById('filterProvince').value;
+      if (selectedProv !== 'ALL') {
+        provincesInScope = [selectedProv];
+      }
+
+      provincesInScope.forEach(prov => {
+        let budgetE = provinceBudgetMap[prov] || 0;
+        let currentCost = rawRoutes.filter(r => r.province === prov && r.status === 'ใช้งานอยู่').reduce((sum, r) => sum + r.cost, 0);
+        let diff = currentCost - budgetE;
+        let pct = budgetE > 0 ? ((diff / budgetE) * 100).toFixed(1) : 0;
+
+        let tr = document.createElement('tr');
+        tr.innerHTML = '<td><b>จังหวัด ' + prov + '</b></td>' +
+          '<td style="text-align:right;">' + budgetE.toLocaleString(undefined, {minimumFractionDigits:2}) + '</td>' +
+          '<td style="text-align:right; color: var(--accent-yellow); font-weight: 600;">' + currentCost.toLocaleString(undefined, {minimumFractionDigits:2}) + '</td>' +
+          '<td style="text-align:right; color: ' + (diff <= 0 ? 'var(--accent-green)' : 'var(--accent-red)') + '; font-weight: 600;">' + 
+            (diff <= 0 ? '-' : '+') + Math.abs(diff).toLocaleString(undefined, {minimumFractionDigits:2}) + ' (' + pct + '%)' +
+          '</td>' +
+          '<td style="text-align:center;"><span class="status-select ' + (diff <= 0 ? 'status-active' : 'status-removed') + '">' + (diff <= 0 ? '🟢 บรรลุเป้าประหยัด' : '🔴 เกินงบตั้งต้น') + '</span></td>';
+        tbody.appendChild(tr);
+      });
+    }
+
+    function renderSummaryTable() {
+      let tbody = document.getElementById('summaryTableBody');
+      tbody.innerHTML = '';
+
+      let districtsInScope = [...new Set(filteredRoutes.map(r => r.district))];
+      if (districtsInScope.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color: var(--text-muted); padding: 15px;">ไม่พบข้อมูลสรุปรายเขต</td></tr>';
+        return;
+      }
+
+      districtsInScope.forEach(d => {
+        let budgetE = districtBudgetMap[d] || 0;
+        let currentCost = filteredRoutes.filter(r => r.district === d && r.status === 'ใช้งานอยู่').reduce((sum, r) => sum + r.cost, 0);
+        let diff = currentCost - budgetE;
+        let pct = budgetE > 0 ? ((diff / budgetE) * 100).toFixed(1) : 0;
+
+        let tr = document.createElement('tr');
+        tr.innerHTML = '<td><b>' + d + '</b></td>' +
+          '<td style="text-align:right;">' + budgetE.toLocaleString(undefined, {minimumFractionDigits:2}) + '</td>' +
+          '<td style="text-align:right; color: var(--accent-yellow); font-weight: 600;">' + currentCost.toLocaleString(undefined, {minimumFractionDigits:2}) + '</td>' +
+          '<td style="text-align:right; color: ' + (diff <= 0 ? 'var(--accent-green)' : 'var(--accent-red)') + '; font-weight: 600;">' + 
+            (diff <= 0 ? '-' : '+') + Math.abs(diff).toLocaleString(undefined, {minimumFractionDigits:2}) + ' (' + pct + '%)' +
+          '</td>' +
+          '<td style="text-align:center;"><span class="status-select ' + (diff <= 0 ? 'status-active' : 'status-removed') + '">' + (diff <= 0 ? '🟢 ปกติ/ประหยัด' : '🔴 เกินงบตั้งต้น') + '</span></td>';
+        tbody.appendChild(tr);
+      });
+    }
+
+    function renderMiniCharts(total, removed, active) {
+      let dummy1 = [total * 1.15, total * 1.08, total * 1.02, total];
+      let dummy2 = [0, removed * 0.2, removed * 0.6, removed];
+      let dummy3 = [active * 1.2, active * 1.1, active * 1.03, active];
+
+      if (miniChart1Obj) miniChart1Obj.destroy();
+      miniChart1Obj = new Chart(document.getElementById('miniChart1'), {
+        type: 'line',
+        data: { labels: ['','','',''], datasets: [{ data: dummy1, borderColor: '#B7C0CA', borderWidth: 2, fill: true, backgroundColor: 'rgba(72,202,228,0.15)', tension: 0.4 }] },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { display: false }, y: { display: false } } }
+      });
+
+      if (miniChart2Obj) miniChart2Obj.destroy();
+      miniChart2Obj = new Chart(document.getElementById('miniChart2'), {
+        type: 'line',
+        data: { labels: ['','','',''], datasets: [{ data: dummy2, borderColor: '#EF476F', borderWidth: 2, fill: true, backgroundColor: 'rgba(239,71,111,0.15)', tension: 0.4 }] },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { display: false }, y: { display: false } } }
+      });
+
+      if (miniChart3Obj) miniChart3Obj.destroy();
+      miniChart3Obj = new Chart(document.getElementById('miniChart3'), {
+        type: 'line',
+        data: { labels: ['','','',''], datasets: [{ data: dummy3, borderColor: '#A8B89A', borderWidth: 2, fill: true, backgroundColor: 'rgba(6,214,160,0.15)', tension: 0.4 }] },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { display: false }, y: { display: false } } }
+      });
+    }
+
+    function renderTable() {
+      let tbody = document.getElementById('tableBody');
+      tbody.innerHTML = '';
+
+      if (filteredRoutes.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="10" style="text-align:center; color: var(--text-muted); padding: 20px;">ไม่พบข้อมูลเส้นทางตามเงื่อนไขที่เลือก</td></tr>';
+        return;
+      }
+
+      filteredRoutes.forEach((r, idx) => {
+        let tr = document.createElement('tr');
+        tr.innerHTML = '<td style="text-align:center; color: var(--text-muted);">' + (idx + 1) + '</td>' +
+          '<td><b>' + r.province + '</b><br><small style="color: var(--text-muted);">' + r.district + '</small></td>' +
+          '<td><b>' + r.routeName + '</b><br><span class="tag-badge">' + r.tagID + '</span></td>' +
+          '<td>' + r.concession + '</td>' +
+          '<td><span class="tag-badge" style="color: var(--accent-yellow);">' + (r.cableType || '-') + '</span></td>' +
+          '<td style="text-align:center;">' + r.diameter + '</td>' +
+          '<td style="text-align:center;">' + r.poleCount + '</td>' +
+          '<td style="text-align:center;">' + r.distance + '</td>' +
+          '<td style="text-align:right; font-weight: 600;">' + r.cost.toLocaleString(undefined, {minimumFractionDigits:2}) + '</td>' +
+          '<td style="text-align:center;">' +
+            '<select onchange="changeRouteStatus(\'' + r.tagID + '\', this.value)" class="status-select ' + (r.status === 'รื้อถอนแล้ว' ? 'status-removed' : 'status-active') + '">' +
+              '<option value="ใช้งานอยู่"' + (r.status === 'ใช้งานอยู่' ? ' selected' : '') + '>🟢 ใช้งานอยู่</option>' +
+              '<option value="รื้อถอนแล้ว"' + (r.status === 'รื้อถอนแล้ว' ? ' selected' : '') + '>🔴 รื้อถอนแล้ว</option>' +
+            '</select>' +
+          '</td>';
+        tbody.appendChild(tr);
+      });
+    }
+
+    function changeRouteStatus(tagID, newStatus) {
+      let route = rawRoutes.find(r => r.tagID === tagID);
+      if (route) {
+        route.status = newStatus;
+        google.script.run.withSuccessHandler(() => {
+          renderKPIs();
+          renderProvinceSummaryTable();
+          renderSummaryTable();
+          renderCharts();
+          renderTable();
+        }).updateRouteStatus(tagID, newStatus);
+      }
+    }
+    
+    function setAllFilteredStatus(newStatus) {
+      if (filteredRoutes.length === 0) return;
+      let tagIDs = filteredRoutes.map(r => r.tagID);
+      
+      filteredRoutes.forEach(r => {
+        let globalR = rawRoutes.find(item => item.tagID === r.tagID);
+        if (globalR) globalR.status = newStatus;
+      });
+
+      renderKPIs();
+      renderProvinceSummaryTable();
+      renderSummaryTable();
+      renderCharts();
+      renderTable();
+
+      google.script.run.withSuccessHandler(() => {
+        console.log("อัปเดตสถานะหมู่สำเร็จ");
+      }).updateMultipleRouteStatus(tagIDs, newStatus);
+    }
+
+    function renderCharts() {
+      let provinces = Object.keys(provinceBudgetMap);
+      let provActiveCounts = provinces.map(p => rawRoutes.filter(r => r.province === p && r.status === 'ใช้งานอยู่').length);
+      let provRemovedCounts = provinces.map(p => rawRoutes.filter(r => r.province === p && r.status === 'รื้อถอนแล้ว').length);
+
+      if (provinceBarChartObj) provinceBarChartObj.destroy();
+      provinceBarChartObj = new Chart(document.getElementById('provinceBarChart'), {
+        type: 'bar',
+        data: {
+          labels: provinces,
+          datasets: [
+            { label: 'ใช้งานอยู่', data: provActiveCounts, backgroundColor: '#A8B89A' },
+            { label: 'รื้อถอนแล้ว', data: provRemovedCounts, backgroundColor: '#EF476F' }
+          ]
+        },
+        options: {
+          indexAxis: 'y',
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { labels: { color: '#B5BBC4', font: { size: 10 } } },
+            tooltip: {
+              callbacks: {
+                label: function(ctx) {
+                  let totalProv = provActiveCounts[ctx.dataIndex] + provRemovedCounts[ctx.dataIndex];
+                  let pct = totalProv > 0 ? ((ctx.raw / totalProv) * 100).toFixed(1) : 0;
+                  return ` ${ctx.dataset.label}: ${ctx.raw.toLocaleString()} เส้นทาง (${pct}%)`;
+                }
+              }
+            }
+          },
+          scales: {
+            x: { stacked: true, ticks: { color: '#B5BBC4', font: { size: 10 } } },
+            y: { stacked: true, ticks: { color: '#B5BBC4', font: { size: 10 } } }
+          }
+        }
+      });
+
+      let districts = [...new Set(filteredRoutes.map(r => r.district))].slice(0, 10);
+      let activeCounts = districts.map(d => filteredRoutes.filter(r => r.district === d && r.status === 'ใช้งานอยู่').length);
+      let removedCounts = districts.map(d => filteredRoutes.filter(r => r.district === d && r.status === 'รื้อถอนแล้ว').length);
+
+      if (barChartObj) barChartObj.destroy();
+      barChartObj = new Chart(document.getElementById('barChart'), {
+        type: 'bar',
+        data: {
+          labels: districts,
+          datasets: [
+            { label: 'ใช้งานอยู่', data: activeCounts, backgroundColor: '#A8B89A' },
+            { label: 'รื้อถอนแล้ว', data: removedCounts, backgroundColor: '#EF476F' }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { labels: { color: '#B5BBC4', font: { size: 10 } } },
+            tooltip: {
+              callbacks: {
+                label: function(ctx) {
+                  let totalDist = activeCounts[ctx.dataIndex] + removedCounts[ctx.dataIndex];
+                  let pct = totalDist > 0 ? ((ctx.raw / totalDist) * 100).toFixed(1) : 0;
+                  return ` ${ctx.dataset.label}: ${ctx.raw.toLocaleString()} เส้นทาง (${pct}%)`;
+                }
+              }
+            }
+          },
+          scales: {
+            x: { stacked: true, ticks: { color: '#B5BBC4', font: { size: 10 } } },
+            y: { stacked: true, ticks: { color: '#B5BBC4', font: { size: 10 } } }
+          }
+        }
+      });
+
+      let copperRemovedCount = 0;
+      let concessionRemovedCount = 0;
+      let otherRemovedCount = 0;
+      let activeCount = 0;
+      let totalFiltered = filteredRoutes.length;
+
+      filteredRoutes.forEach(r => {
+        let isCopper = (r.cableType && (r.cableType.toLowerCase().indexOf('ทองแดง') !== -1 || r.cableType.toLowerCase().indexOf('copper') !== -1)) || (r.routeName && r.routeName.toLowerCase().indexOf('cu') !== -1);
+        let isConcession = r.concession && r.concession !== '-' && r.concession !== 'อื่นๆ' && r.concession.indexOf('ไม่มีใบประกอบ') === -1;
+
+        if (r.status === 'รื้อถอนแล้ว') {
+          if (isCopper) {
+            copperRemovedCount++;
+          } else if (isConcession) {
+            concessionRemovedCount++;
+          } else {
+            otherRemovedCount++;
+          }
+        } else {
+          activeCount++;
+        }
+      });
+
+      if (donutChartObj) donutChartObj.destroy();
+      donutChartObj = new Chart(document.getElementById('donutChart'), {
+        type: 'doughnut',
+        data: {
+          labels: [
+            'รื้อถอนเส้นทางทองแดง',
+            'หน่วยงานใต้สัมปทาน',
+            'อื่น ๆ (ที่รื้อถอนแล้ว)',
+            'ใช้งานอยู่ (ยังไม่รื้อถอน)'
+          ],
+          datasets: [{
+            data: [copperRemovedCount, concessionRemovedCount, otherRemovedCount, activeCount],
+            backgroundColor: [
+              '#EF476F',
+              '#E5C15A',
+              '#118AB2',
+              '#A8B89A'
+            ],
+            borderWidth: 2,
+            borderColor: '#242830'
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { 
+            legend: { 
+              position: 'bottom', 
+              labels: { color: '#B5BBC4', font: { size: 11 }, boxWidth: 12 } 
+            },
+            tooltip: {
+              callbacks: {
+                label: function(ctx) {
+                  let val = ctx.raw || 0;
+                  let pct = totalFiltered > 0 ? ((val / totalFiltered) * 100).toFixed(1) : '0.0';
+                  return ` ${val.toLocaleString()} เส้นทาง (${pct}%)`;
+                }
+              }
+            }
+          }
+        }
+      });
+    }
+
+    function resetFilters() {
+      document.getElementById('filterProvince').value = 'ALL';
+      document.getElementById('searchTag').value = '';
+      onProvinceChange();
+    }
+
+    function collectExportData() {
+      const total = filteredRoutes.length;
+      const removed = filteredRoutes.filter(r => r.status === 'รื้อถอนแล้ว').length;
+      const active = total - removed;
+      const removedPct = total > 0 ? ((removed / total) * 100).toFixed(1) : '0.0';
+      const activePct = total > 0 ? ((active / total) * 100).toFixed(1) : '0.0';
+      const activeCost = filteredRoutes.filter(r => r.status === 'ใช้งานอยู่').reduce((sum, r) => sum + (parseFloat(r.cost) || 0), 0);
+      const removedCopperVol = filteredRoutes.filter(r => r.status === 'รื้อถอนแล้ว').reduce((sum, r) => sum + (parseFloat(r.copperVolume) || 0), 0) / 1000;
+
+      const y1 = document.getElementById('yearCol1').value || 'ปีที่ 1';
+      const y2 = document.getElementById('yearCol2').value || 'ปีที่ 2';
+      const v1 = parseFloat(document.getElementById('valCol1').value) || 0;
+      const v2 = parseFloat(document.getElementById('valCol2').value) || 0;
+      const r1 = parseFloat(document.getElementById('routeCol1').value) || 0;
+      const r2 = parseFloat(document.getElementById('routeCol2').value) || 0;
+
+      const diff1 = activeCost - v1;
+      const pct1 = v1 > 0 ? ((diff1 / v1) * 100).toFixed(1) : '0.0';
+      const diff2 = activeCost - v2;
+      const pct2 = v2 > 0 ? ((diff2 / v2) * 100).toFixed(1) : '0.0';
+
+      let provincesInScope = Object.keys(provinceBudgetMap);
+      let selectedProv = document.getElementById('filterProvince').value;
+      if (selectedProv !== 'ALL') provincesInScope = [selectedProv];
+
+      const provSummary = provincesInScope.map(prov => {
+        let budgetE = provinceBudgetMap[prov] || 0;
+        let currCost = rawRoutes.filter(r => r.province === prov && r.status === 'ใช้งานอยู่').reduce((sum, r) => sum + (parseFloat(r.cost) || 0), 0);
+        let diff = currCost - budgetE;
+        let pct = budgetE > 0 ? ((diff / budgetE) * 100).toFixed(1) : '0.0';
+        return {
+          province: prov,
+          baseBudget: budgetE,
+          currBudget: currCost,
+          diff: diff,
+          pct: pct,
+          status: diff <= 0 ? 'บรรลุเป้าประหยัด' : 'เกินงบตั้งต้น'
+        };
+      });
+
+      let districtsInScope = [...new Set(filteredRoutes.map(r => r.district))];
+      const distSummary = districtsInScope.map(d => {
+        let budgetE = districtBudgetMap[d] || 0;
+        let currCost = filteredRoutes.filter(r => r.district === d && r.status === 'ใช้งานอยู่').reduce((sum, r) => sum + (parseFloat(r.cost) || 0), 0);
+        let diff = currCost - budgetE;
+        let pct = budgetE > 0 ? ((diff / budgetE) * 100).toFixed(1) : '0.0';
+        return {
+          district: d,
+          baseBudget: budgetE,
+          currBudget: currCost,
+          diff: diff,
+          pct: pct,
+          status: diff <= 0 ? 'ปกติ/ประหยัด' : 'เกินงบตั้งต้น'
+        };
+      });
+
+      return {
+        scope: getActiveFilterDescription(),
+        dateStr: new Date().toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' }),
+        total, removed, active, removedPct, activePct, activeCost, removedCopperVol,
+        y1, y2, v1, v2, r1, r2, diff1, pct1, diff2, pct2,
+        provSummary, distSummary
+      };
+    }
+
+    function exportSummaryReport(type) {
+      const data = collectExportData();
+      if (type === 'excel') exportToExcel(data);
+      else if (type === 'ppt') exportToPowerPoint(data);
+      else if (type === 'pdf') exportToPDF(data);
+    }
+
+    function exportToExcel(d) {
+      if (typeof XLSX === 'undefined') {
+        Swal.fire('ข้อผิดพลาด', 'ไม่สามารถโหลดโมดูล Excel ได้ กรุณารีเฟรชหน้าเว็บ', 'error');
+        return;
+      }
+      const wb = XLSX.utils.book_new();
+      const kpiRows = [
+        ["รายงานสรุปผลการดำเนินงาน Cleansing RD03 อป."],
+        [d.scope],
+        ["วันที่ออกรายงาน: " + d.dateStr],
+        [],
+        ["ตัวชี้วัดหลัก (KPI)", "ค่าปัจจุบัน", "หมายเหตุ"],
+        ["เส้นทางทั้งหมดในเงื่อนไข", d.total, "เส้นทาง"],
+        ["จำนวนเส้นทางที่รื้อถอนแล้ว", d.removed, `คิดเป็น ${d.removedPct}%`],
+        ["เส้นทางคงเหลือ (ใช้งานอยู่)", d.active, `คิดเป็น ${d.activePct}%`],
+        ["งบประมาณคงเหลือหลัง Cleansing (บาท)", d.activeCost, "บาท"],
+        ["ปริมาตรทองแดงที่ถูกรื้อถอน (cm³)", Number(d.removedCopperVol.toFixed(2)), "cm³"]
+      ];
+      const ws1 = XLSX.utils.aoa_to_sheet(kpiRows);
+      XLSX.utils.book_append_sheet(wb, ws1, "1_สรุปภาพรวม_KPI");
+      XLSX.writeFile(wb, `รายงานสรุป_Cleansing_RD03_${new Date().toISOString().slice(0,10)}.xlsx`);
+    }
+
+    function exportToPowerPoint(d) {
+      if (typeof PptxGenJS === 'undefined') {
+        Swal.fire('ข้อผิดพลาด', 'ไม่สามารถโหลดโมดูล PowerPoint ได้ กรุณารีเฟรชหน้าเว็บ', 'error');
+        return;
+      }
+      let pptx = new PptxGenJS();
+      pptx.layout = 'LAYOUT_16x9';
+      let slide1 = pptx.addSlide();
+      slide1.background = { color: "242830" };
+      slide1.addText("รายงานสรุปผลการดำเนินงาน Cleansing สายพาดสื่อสาร RD03 อป.", { x: 0.8, y: 1.5, w: 8.5, h: 1.5, fontSize: 32, bold: true, color: "FFFFFF", fontFace: "Prompt" });
+      pptx.writeFile({ fileName: `นำเสนอ_Cleansing_RD03_${new Date().toISOString().slice(0,10)}.pptx` });
+    }
+
+    function exportToPDF(d) {
+      let printWin = window.open('', '_blank', 'width=1024,height=800');
+      printWin.document.write(`
+        <!DOCTYPE html>
+        <html lang="th">
+        <head>
+          <meta charset="utf-8">
+          <title>รายงานสรุปนำเสนอ Cleansing RD03 อป.</title>
+          <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;600;700&display=swap" rel="stylesheet">
+          <style>
+            body { font-family: 'Prompt', sans-serif; color: #1f2937; padding: 30px; line-height: 1.5; }
+            h1 { font-size: 20px; color: #111827; }
+          </style>
+        </head>
+        <body>
+          <h1>รายงานสรุปผลการดำเนินงาน Cleansing สายพาดสื่อสาร RD03 อป.</h1>
+          <p>${d.scope}</p>
+          <script>window.onload = function() { setTimeout(function() { window.print(); }, 500); };<\/script>
+        </body>
+        </html>
+      `);
+      printWin.document.close();
+    }
+  </script>
+
+  <!-- ========================================================================= -->
+  <!-- Modal 1: อัตราส่วนและสัดส่วนเชิงลึก (Ratio Modal) -->
+  <!-- ========================================================================= -->
+  <div id="ratioPresentationModal" onclick="if(event.target === this) closeRatioPresentationModal();" style="display:none; position:fixed; z-index:100001; inset:0; background:rgba(9, 13, 22, 0.92); backdrop-filter: blur(8px); align-items:center; justify-content:center; padding:16px; box-sizing:border-box;">
+    <div style="background:#2b3038; border:1px solid #4b5563; border-radius:16px; width:100%; max-width:1240px; max-height:94vh; overflow-y:auto; padding:26px; color:#f3f4f6; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.85); font-family: 'Prompt', sans-serif;">
+      
+      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; border-bottom:1px solid #4b5563; padding-bottom:14px; margin-bottom:20px;">
+        <div>
+          <h2 style="margin:0; font-size:1.35rem; color:#E5C15A; display:flex; align-items:center; gap:8px;">
+            📊 วิเคราะห์อัตราส่วนการรื้อถอนเปรียบเทียบเส้นทางใช้งาน (ตัวเลข / %)
+          </h2>
+          <p id="ratioModalFilterLabel" style="margin:4px 0 0 0; font-size:0.85rem; color:#9ca3af;">
+            ขอบเขตข้อมูล: ทุกพื้นที่ / ทุกประเภท
+          </p>
+        </div>
+        <button type="button" onclick="closeRatioPresentationModal()" style="background:#dc2626; color:#ffffff; border:none; border-radius:8px; padding:8px 16px; cursor:pointer; font-weight:bold; font-size:0.88rem;">
+          ✕ ปิดหน้าต่าง
+        </button>
+      </div>
+
+      <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap:14px; margin-bottom:22px;">
+        <div style="background:#242830; border-left:4px solid #B7C0CA; padding:14px 16px; border-radius:10px;">
+          <div style="font-size:0.8rem; color:#9ca3af;">เส้นทางทั้งหมดในเงื่อนไข</div>
+          <div id="rmTotalText" style="font-size:1.5rem; font-weight:700; color:#fff; margin-top:2px;">0 (100%)</div>
+        </div>
+        <div style="background:#242830; border-left:4px solid #EF476F; padding:14px 16px; border-radius:10px;">
+          <div style="font-size:0.8rem; color:#9ca3af;">รื้อถอนแล้วรวม</div>
+          <div id="rmRemovedText" style="font-size:1.5rem; font-weight:700; color:#EF476F; margin-top:2px;">0 (0%)</div>
+        </div>
+        <div style="background:#242830; border-left:4px solid #A8B89A; padding:14px 16px; border-radius:10px;">
+          <div style="font-size:0.8rem; color:#9ca3af;">คงเหลือใช้งานอยู่</div>
+          <div id="rmActiveText" style="font-size:1.5rem; font-weight:700; color:#A8B89A; margin-top:2px;">0 (0%)</div>
+        </div>
+      </div>
+
+      <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap:18px;">
+        <div style="background:#242830; border:1px solid #374151; border-radius:12px; padding:18px; display:flex; flex-direction:column;">
+          <div style="font-size:0.95rem; font-weight:600; color:#E5C15A; text-align:center; margin-bottom:12px;">ภาพรวมทั้งหมดที่รื้อถอน</div>
+          <div style="height:290px; position:relative;"><canvas id="modalDonut1"></canvas></div>
+        </div>
+        <div style="background:#242830; border:1px solid #374151; border-radius:12px; padding:18px; display:flex; flex-direction:column;">
+          <div style="font-size:0.95rem; font-weight:600; color:#60a5fa; text-align:center; margin-bottom:12px;">แยกตามประเภทสายที่รื้อถอน</div>
+          <div style="height:290px; position:relative;"><canvas id="modalDonut2"></canvas></div>
+        </div>
+        <div style="background:#242830; border:1px solid #374151; border-radius:12px; padding:18px; display:flex; flex-direction:column;">
+          <div style="font-size:0.95rem; font-weight:600; color:#34d399; text-align:center; margin-bottom:12px;">แยกตามหน่วยงานสัมปทาน</div>
+          <div style="height:290px; position:relative;"><canvas id="modalDonut3"></canvas></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function openRatioPresentationModal() {
+      document.getElementById('ratioPresentationModal').style.display = 'flex';
+      document.getElementById('ratioModalFilterLabel').textContent = getActiveFilterDescription();
+
+      const routes = Array.isArray(filteredRoutes) ? filteredRoutes : [];
+      const total = routes.length;
+      const removedRoutes = routes.filter(r => r.status === 'รื้อถอนแล้ว');
+      const activeCount = total - removedRoutes.length;
+
+      const pctRemoved = total > 0 ? ((removedRoutes.length / total) * 100).toFixed(1) : '0.0';
+      const pctActive = total > 0 ? ((activeCount / total) * 100).toFixed(1) : '0.0';
+
+      document.getElementById('rmTotalText').textContent = `${total.toLocaleString()} เส้นทาง (100%)`;
+      document.getElementById('rmRemovedText').textContent = `${removedRoutes.length.toLocaleString()} เส้นทาง (${pctRemoved}%)`;
+      document.getElementById('rmActiveText').textContent = `${activeCount.toLocaleString()} เส้นทาง (${pctActive}%)`;
+
+      const formatLabel = (name, count) => {
+        const pct = total > 0 ? ((count / total) * 100).toFixed(1) : '0.0';
+        return `${name}: ${count.toLocaleString()} (${pct}%)`;
+      };
+
+      let d1Copper = 0, d1Conc = 0, d1Other = 0;
+      removedRoutes.forEach(r => {
+        let isCopper = (r.cableType && (r.cableType.toLowerCase().includes('ทองแดง') || r.cableType.toLowerCase().includes('copper'))) || (r.routeName && r.routeName.toLowerCase().includes('cu'));
+        let isConc = r.concession && r.concession !== '-' && r.concession !== 'อื่นๆ' && !r.concession.includes('ไม่มีใบประกอบ');
+        if (isCopper) d1Copper++;
+        else if (isConc) d1Conc++;
+        else d1Other++;
+      });
+
+      if (modalDonut1Obj) modalDonut1Obj.destroy();
+      modalDonut1Obj = new Chart(document.getElementById('modalDonut1'), {
+        type: 'doughnut',
+        data: {
+          labels: [formatLabel('สายทองแดง (รื้อ)', d1Copper), formatLabel('สัมปทาน (รื้อ)', d1Conc), formatLabel('อื่นๆ (รื้อ)', d1Other), formatLabel('ใช้งานอยู่', activeCount)],
+          datasets: [{ data: [d1Copper, d1Conc, d1Other, activeCount], backgroundColor: ['#EF476F', '#E5C15A', '#118AB2', '#A8B89A'], borderWidth: 2, borderColor: '#242830' }]
+        },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { color: '#e5e7eb', font: { size: 11 } } } } }
+      });
+
+      const cableMap = {};
+      removedRoutes.forEach(r => {
+        let cb = (r.cableType && r.cableType.trim() !== '' && r.cableType !== '-') ? r.cableType.trim() : 'อื่นๆ';
+        cableMap[cb] = (cableMap[cb] || 0) + 1;
+      });
+      let sortedCables = Object.entries(cableMap).sort((a, b) => b[1] - a[1]);
+      let d2Labels = [], d2Data = [], otherCableSum = 0;
+      sortedCables.forEach(([name, count], idx) => {
+        if (idx < 5) { d2Labels.push(formatLabel(name + ' (รื้อ)', count)); d2Data.push(count); }
+        else { otherCableSum += count; }
+      });
+      if (otherCableSum > 0) { d2Labels.push(formatLabel('อื่นๆ (รื้อ)', otherCableSum)); d2Data.push(otherCableSum); }
+      d2Labels.push(formatLabel('ใช้งานอยู่', activeCount)); d2Data.push(activeCount);
+
+      if (modalDonut2Obj) modalDonut2Obj.destroy();
+      modalDonut2Obj = new Chart(document.getElementById('modalDonut2'), {
+        type: 'doughnut',
+        data: {
+          labels: d2Labels,
+          datasets: [{ data: d2Data, backgroundColor: ['#EF476F', '#F78C6B', '#FFD166', '#06D6A0', '#118AB2', '#A8B89A'], borderWidth: 2, borderColor: '#242830' }]
+        },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { color: '#e5e7eb', font: { size: 11 } } } } }
+      });
+
+      const concMap = {};
+      removedRoutes.forEach(r => {
+        let c = (r.concession && r.concession.trim() !== '' && r.concession !== '-') ? r.concession.trim() : 'อื่นๆ';
+        concMap[c] = (concMap[c] || 0) + 1;
+      });
+      let sortedConcs = Object.entries(concMap).sort((a, b) => b[1] - a[1]);
+      let d3Labels = [], d3Data = [], otherConcSum = 0;
+      sortedConcs.forEach(([name, count], idx) => {
+        if (idx < 6 && name !== 'อื่นๆ') { d3Labels.push(formatLabel(name + ' (รื้อ)', count)); d3Data.push(count); }
+        else { otherConcSum += count; }
+      });
+      if (otherConcSum > 0) { d3Labels.push(formatLabel('อื่นๆ (รื้อ)', otherConcSum)); d3Data.push(otherConcSum); }
+      d3Labels.push(formatLabel('ใช้งานอยู่', activeCount)); d3Data.push(activeCount);
+
+      if (modalDonut3Obj) modalDonut3Obj.destroy();
+      modalDonut3Obj = new Chart(document.getElementById('modalDonut3'), {
+        type: 'doughnut',
+        data: {
+          labels: d3Labels,
+          datasets: [{ data: d3Data, backgroundColor: ['#E5C15A', '#EF476F', '#3B82F6', '#EC4899', '#14B8A6', '#F97316', '#A8B89A'], borderWidth: 2, borderColor: '#242830' }]
+        },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { color: '#e5e7eb', font: { size: 11 } } } } }
+      });
+    }
+
+    function closeRatioPresentationModal() {
+      document.getElementById('ratioPresentationModal').style.display = 'none';
+    }
+  </script>
+
+  <!-- ========================================================================= -->
+  <!-- Modal ใหม่: ขยายนำเสนอ "จำนวนเส้นทางทั้งหมด" แยกรายจังหวัด (%) -->
+  <!-- ========================================================================= -->
+  <div id="totalPresentationModal" onclick="if(event.target === this) closeTotalModal();" style="display:none; position:fixed; z-index:100000; inset:0; background:rgba(9,13,22,.88); backdrop-filter: blur(6px); align-items:center; justify-content:center; padding:16px;">
+    <div style="background:#2b3038; border:1px solid #4b5563; border-radius:14px; padding:26px; max-width:640px; width:100%; color:#fff; box-shadow: 0 25px 50px rgba(0,0,0,0.8);">
+      <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #4b5563; padding-bottom:12px; margin-bottom:18px;">
+        <h3 style="color:#B7C0CA; margin:0; font-size:1.25rem;">🌐 รายงานสรุป: จำนวนเส้นทางทั้งหมดแยกรายจังหวัด (ส่วนบริการ)</h3>
+        <button onclick="closeTotalModal()" style="background:#dc2626; color:#fff; border:none; padding:6px 14px; border-radius:6px; cursor:pointer; font-weight:bold;">✕</button>
+      </div>
+      <p id="totalModalFilterLabel" style="font-size:0.82rem; color:#9ca3af; margin:0 0 16px 0;">ขอบเขตข้อมูล: ทุกพื้นที่</p>
+      
+      <div style="max-height: 380px; overflow-y: auto; border: 1px solid #374151; border-radius: 8px;">
+        <table style="width: 100%; border-collapse: collapse; font-size: 0.9rem; text-align: left;">
+          <thead>
+            <tr style="background: #373e48; color: #E5C15A; border-bottom: 1px solid #4b5563;">
+              <th style="padding: 10px 14px;">จังหวัด (ส่วนบริการ)</th>
+              <th style="padding: 10px 14px; text-align: right;">จำนวนเส้นทาง</th>
+              <th style="padding: 10px 14px; text-align: right;">คิดเป็นร้อยละ (%)</th>
+            </tr>
+          </thead>
+          <tbody id="totalModalTableBody" style="background: #242830;"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- Modal ใหม่: ขยายนำเสนอ "จำนวนเส้นทางที่รื้อถอนแล้ว" แยกรายจังหวัด (%) -->
+  <!-- ========================================================================= -->
+  <div id="removedPresentationModal" onclick="if(event.target === this) closeRemovedModal();" style="display:none; position:fixed; z-index:100000; inset:0; background:rgba(9,13,22,.88); backdrop-filter: blur(6px); align-items:center; justify-content:center; padding:16px;">
+    <div style="background:#2b3038; border:1px solid #4b5563; border-radius:14px; padding:26px; max-width:640px; width:100%; color:#fff; box-shadow: 0 25px 50px rgba(0,0,0,0.8);">
+      <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #4b5563; padding-bottom:12px; margin-bottom:18px;">
+        <h3 style="color:#EF476F; margin:0; font-size:1.25rem;">🔴 รายงานสรุป: จำนวนเส้นทางที่รื้อถอนแล้วแยกรายจังหวัด</h3>
+        <button onclick="closeRemovedModal()" style="background:#dc2626; color:#fff; border:none; padding:6px 14px; border-radius:6px; cursor:pointer; font-weight:bold;">✕</button>
+      </div>
+      <p id="removedModalFilterLabel" style="font-size:0.82rem; color:#9ca3af; margin:0 0 16px 0;">ขอบเขตข้อมูล: ทุกพื้นที่</p>
+      
+      <div style="max-height: 380px; overflow-y: auto; border: 1px solid #374151; border-radius: 8px;">
+        <table style="width: 100%; border-collapse: collapse; font-size: 0.9rem; text-align: left;">
+          <thead>
+            <tr style="background: #373e48; color: #EF476F; border-bottom: 1px solid #4b5563;">
+              <th style="padding: 10px 14px;">จังหวัด (ส่วนบริการ)</th>
+              <th style="padding: 10px 14px; text-align: right;">รื้อถอนแล้ว (เส้นทาง)</th>
+              <th style="padding: 10px 14px; text-align: right;">คิดเป็นร้อยละ (%)</th>
+            </tr>
+          </thead>
+          <tbody id="removedModalTableBody" style="background: #242830;"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- Modal ใหม่: ขยายนำเสนอ "จำนวนเส้นทางคงเหลือ(ใช้งานอยู่)" แยกรายจังหวัด (%) -->
+  <!-- ========================================================================= -->
+  <div id="remainingPresentationModal" onclick="if(event.target === this) closeRemainingModal();" style="display:none; position:fixed; z-index:100000; inset:0; background:rgba(9,13,22,.88); backdrop-filter: blur(6px); align-items:center; justify-content:center; padding:16px;">
+    <div style="background:#2b3038; border:1px solid #4b5563; border-radius:14px; padding:26px; max-width:640px; width:100%; color:#fff; box-shadow: 0 25px 50px rgba(0,0,0,0.8);">
+      <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #4b5563; padding-bottom:12px; margin-bottom:18px;">
+        <h3 style="color:#A8B89A; margin:0; font-size:1.25rem;">🟢 รายงานสรุป: เส้นทางคงเหลือ (ใช้งานอยู่) แยกรายจังหวัด</h3>
+        <button onclick="closeRemainingModal()" style="background:#dc2626; color:#fff; border:none; padding:6px 14px; border-radius:6px; cursor:pointer; font-weight:bold;">✕</button>
+      </div>
+      <p id="remainingModalFilterLabel" style="font-size:0.82rem; color:#9ca3af; margin:0 0 16px 0;">ขอบเขตข้อมูล: ทุกพื้นที่</p>
+      
+      <div style="max-height: 380px; overflow-y: auto; border: 1px solid #374151; border-radius: 8px;">
+        <table style="width: 100%; border-collapse: collapse; font-size: 0.9rem; text-align: left;">
+          <thead>
+            <tr style="background: #373e48; color: #A8B89A; border-bottom: 1px solid #4b5563;">
+              <th style="padding: 10px 14px;">จังหวัด (ส่วนบริการ)</th>
+              <th style="padding: 10px 14px; text-align: right;">คงเหลือใช้งาน (เส้นทาง)</th>
+              <th style="padding: 10px 14px; text-align: right;">คิดเป็นร้อยละ (%)</th>
+            </tr>
+          </thead>
+          <tbody id="remainingModalTableBody" style="background: #242830;"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- Modal 2: งบประมาณและเจาะลึกรายจังหวัด (Budget Modal) -->
+  <!-- ========================================================================= -->
+  <div id="budgetPresentationModal" onclick="if(event.target === this) closeBudgetPresentationModal();" style="display:none; position:fixed; z-index:99999; left:0; top:0; width:100%; height:100%; background:rgba(9, 13, 22, 0.90); backdrop-filter: blur(8px); align-items:center; justify-content:center; padding:16px; box-sizing:border-box;">
+    <div style="background:#2b3038; border:1px solid #374151; border-radius:16px; width:100%; max-width:1080px; max-height:92vh; overflow-y:auto; padding:28px; color:#f3f4f6; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.85); font-family: 'Prompt', sans-serif;">
+      
+      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; border-bottom:1px solid #59616c; padding-bottom:16px; margin-bottom:24px;">
+        <div>
+          <h2 style="margin:0; font-size:1.45rem; color:#E5C15A; display:flex; align-items:center; gap:8px;">
+            📊 รายงานสรุปงบประมาณ & วิเคราะห์การเพิ่ม-ลดรายพื้นที่
+          </h2>
+          <p id="pmFilterScopeLabel" style="margin:4px 0 0 0; font-size:0.88rem; color:#9ca3af;">
+            ขอบเขตข้อมูล: ทุกจังหวัด / ทุกประเภท
+          </p>
+        </div>
+        <button type="button" onclick="closeBudgetPresentationModal()" style="background:#dc2626; color:#ffffff; border:none; border-radius:8px; padding:9px 18px; cursor:pointer; font-weight:bold; font-size:0.9rem;">
+          ✕ ปิดหน้าต่าง
+        </button>
+      </div>
+
+      <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap:16px; margin-bottom:24px;">
+        <div style="background:#373e48; padding:20px; border-radius:12px; border-left:5px solid #fbbf24;">
+          <div style="font-size:0.85rem; color:#9ca3af;">งบปัจจุบันรวม (หลัง Cleansing)</div>
+          <div id="pmTotalCurrentBudget" style="font-size:1.85rem; font-weight:bold; color:#E5C15A; margin:6px 0;">0.00 ฿</div>
+          <div id="pmRouteSummaryText" style="font-size:0.82rem; color:#10b981;">กำลังคำนวณเส้นทาง...</div>
+        </div>
+        <div style="background:#373e48; padding:20px; border-radius:12px; border-left:5px solid #10b981;">
+          <div id="pmTitleCol1" style="font-size:0.85rem; color:#9ca3af;">เปรียบเทียบงบปี 2567 (0.00 ฿)</div>
+          <div id="pmDiffCol1" style="font-size:1.65rem; font-weight:bold; color:#10b981; margin:6px 0;">0.00 ฿</div>
+          <div id="pmPctCol1" style="font-size:0.85rem; color:#34d399;">▼ ลดลง 0.0%</div>
+        </div>
+        <div style="background:#373e48; padding:20px; border-radius:12px; border-left:5px solid #3b82f6;">
+          <div id="pmTitleCol2" style="font-size:0.85rem; color:#9ca3af;">เปรียบเทียบค่าเริ่มแรก 2568 (0.00 ฿)</div>
+          <div id="pmDiffCol2" style="font-size:1.65rem; font-weight:bold; color:#60a5fa; margin:6px 0;">0.00 ฿</div>
+          <div id="pmPctCol2" style="font-size:0.85rem; color:#93c5fd;">▼ ลดลง 0.0%</div>
+        </div>
+      </div>
+
+      <div style="background:linear-gradient(145deg, #1a1829 0%, #131722 100%); border:1px solid #4f46e5; border-radius:14px; padding:24px; margin-bottom:24px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:18px;">
+          <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+            <span style="font-size:1.15rem; font-weight:bold; color:#e0e7ff;">📍 เจาะลึกส่วนบริการ:</span>
+            <select id="pmProvinceSelect" onchange="renderProvinceDetailInModal()" style="background:#242830; color:#E5C15A; border:1px solid #6366f1; border-radius:8px; padding:6px 14px; font-size:1rem; font-weight:bold; cursor:pointer; outline:none;"></select>
+          </div>
+          <div id="pmProvinceBadge"></div>
+        </div>
+
+        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:14px; text-align:center; background:#242830; padding:18px; border-radius:12px; border:1px solid #1e293b; margin-bottom:18px;">
+          <div>
+            <div style="font-size:0.82rem; color:#9ca3af;">1. งบตั้งต้นรวม (Col E)</div>
+            <div id="pmProvBaseBudget" style="font-size:1.4rem; font-weight:bold; color:#f3f4f6; margin-top:4px;">0.00 ฿</div>
+          </div>
+          <div style="border-left:1px solid #1e293b; border-right:1px solid #1e293b;">
+            <div style="font-size:0.82rem; color:#9ca3af;">2. งบปัจจุบัน (หลัง Clean)</div>
+            <div id="pmProvCurrBudget" style="font-size:1.4rem; font-weight:bold; color:#E5C15A; margin-top:4px;">0.00 ฿</div>
+          </div>
+          <div>
+            <div style="font-size:0.82rem; color:#9ca3af;">3. ส่วนต่าง (เพิ่ม / ลด)</div>
+            <div id="pmProvDiffBudget" style="font-size:1.4rem; font-weight:bold; margin-top:4px;">0.00 ฿</div>
+          </div>
+        </div>
+
+        <div style="margin-bottom:14px;">
+          <div id="pmBarLabels" style="font-size:0.82rem; color:#cbd5e1; margin-bottom:6px; display:flex; justify-content:space-between;">
+            <span>งบตั้งต้น</span>
+            <span>งบปัจจุบัน</span>
+          </div>
+          <div id="pmComparisonBar" style="width:100%; background:#1e293b; height:16px; border-radius:8px; overflow:hidden; display:flex;"></div>
+        </div>
+
+        <div id="pmNarrativeBox" style="background:rgba(30, 41, 59, 0.7); border-left:4px solid #fbbf24; padding:12px 16px; border-radius:6px; font-size:0.88rem; color:#e2e8f0; line-height:1.6;"></div>
+      </div>
+
+      <div>
+        <h3 id="pmSubTableTitle" style="margin:0 0 12px 0; font-size:1.05rem; color:#cbd5e1;">🏢 รายละเอียดแยกตามพื้นที่ย่อย / กฟส.</h3>
+        <div style="overflow-x:auto; border:1px solid #59616c; border-radius:10px;">
+          <table style="width:100%; border-collapse:collapse; text-align:left; font-size:0.88rem;">
+            <thead>
+              <tr style="background:#373e48; color:#9ca3af; border-bottom:1px solid #374151;">
+                <th style="padding:12px 14px;">พื้นที่ / กฟส.</th>
+                <th style="padding:12px 14px; text-align:center;">เส้นทางทั้งหมด</th>
+                <th style="padding:12px 14px; text-align:center;">รื้อถอนแล้ว</th>
+                <th style="padding:12px 14px; text-align:center;">คงเหลือใช้งาน</th>
+                <th style="padding:12px 14px; text-align:right;">งบตั้งต้น (บาท)</th>
+                <th style="padding:12px 14px; text-align:right;">งบหลัง Clean (บาท)</th>
+                <th style="padding:12px 14px; text-align:right;">ส่วนต่าง (เพิ่ม/ลด)</th>
+              </tr>
+            </thead>
+            <tbody id="pmSubAreaTableBody" style="background:#242830;"></tbody>
+          </table>
+        </div>
+      ยรายการ',
+    allowOutsideClick: false,
+    didOpen: () => { Swal.showLoading(); }</div>
+
+    </div>
+  </div>
+
+<script>
+// 🔴 1. URL เว็บแอปจาก Google Apps Script ของคุณ
+const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzHArS0cbPMiX2W5Mezzs6BuxuZomE7IBugEbUzXy0bKRZAMMGN3oL5PE4MweWGnsfS/exec"; 
+
+// 2. โหลดข้อมูลเริ่มต้นเมื่อเปิดเว็บ (ดึงจาก Cache JSON โหลดไว ไม่หน่วง)
+function loadDashboardData() {
+  const loadingEl = document.getElementById('loading');
+  if (loadingEl) loadingEl.style.display = 'flex';
+  
+  fetch(WEB_APP_URL)
+    .then(response => response.json())
+    .then(data => {
+      if (loadingEl) loadingEl.style.display = 'none';
+      if (typeof initDashboard === 'function') {
+        initDashboard(data); 
+      }
+    })
+    .catch(error => {
+      console.error('เกิดข้อผิดพลาดในการโหลดข้อมูล:', error);
+      if (typeof Swal !== 'undefined') {
+        Swal.fire('Error', 'ไม่สามารถโหลดข้อมูลได้ กรุณาลองใหม่อีกครั้ง', 'error');
+      }
+      if (loadingEl) loadingEl.style.display = 'none';
+    });
+}
+
+// 3. ฟังก์ชันอัปเดตสถานะรายเส้นทาง
+function updateRouteStatus(tagID, newStatus) {
+  fetch(WEB_APP_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify({
+      action: 'single',
+      tagID: tagID,
+      newStatus: newStatus
+    })
+  })
+  .then(response => response.json())
+  .then(res => {
+    if (res.success) {
+      if (typeof Swal !== 'undefined') {
+        const Toast = Swal.mixin({
+          toast: true, position: 'top-end', showConfirmButton: false, timer: 2000
+        });
+        Toast.fire({ icon: 'success', title: 'อัปเดตสถานะเรียบร้อย' });
+      }
+    } else {
+      if (typeof Swal !== 'undefined') {
+        Swal.fire('แจ้งเตือน', res.message, 'warning');
+      }
+    }
+  })
+  .catch(error => {
+    console.error('Error updating status:', error);
+  });
+}
+
+// 4. ฟังก์ชันอัปเดตสถานะแบบกลุ่ม (Batch Update ตาม Filter)
+function updateMultipleRouteStatus(tagIDs, newStatus) {
+  if (typeof Swal !== 'undefined') {
+    Swal.fire({
+      title: 'กำลังบันทึกข้อมูล...',
+      text: 'กรุณารอสักครู่ ระบบกำลังอัปเดตสถานะหลายรายการ',
+      allowOutsideClick: false,
+      didOpen: () => { Swal.showLoading(); }
+    });
+  }
+
+  fetch(WEB_APP_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify({
+      action: 'batch',
+      tagIDs: tagIDs,
+      newStatus: newStatus
+    })
+  })
+  .then(response => response.json())
+  .then(res => {
+    if (typeof Swal !== 'undefined') Swal.close();
+    if (res.success) {
+      if (typeof Swal !== 'undefined') {
+        Swal.fire({
+          icon: 'success',
+          title: 'สำเร็จ!',
+          text: `อัปเดตสถานะเป็น "${newStatus}" เรียบร้อยแล้ว ${res.updatedCount} รายการ`,
+          timer: 2000,
+          showConfirmButton: false
+        }).then(() => {
+          loadDashboardData();
+        });
+      }
+    }
+  })
+  .catch(error => {
+    if (typeof Swal !== 'undefined') {
+      Swal.close();
+      Swal.fire('Error', 'เกิดข้อผิดพลาดในการอัปเดตกลุ่ม', 'error');
+    }
+  });
+}
+
+// 5. ฟังก์ชันจัดรูปแบบตัวเลขการเงิน
+function formatMoney(num) {
+  return Number(num || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+// 6. ฟังก์ชันจัดการ Modal งบประมาณ
+function openBudgetPresentationModal() {
+  document.getElementById('budgetPresentationModal').style.display = 'flex';
+  if (typeof getActiveFilterDescription === 'function') {
+    document.getElementById('pmFilterScopeLabel').textContent = getActiveFilterDescription();
+  }
+
+  const routes = Array.isArray(filteredRoutes) ? filteredRoutes : [];
+  let totalRoutes = routes.length;
+  let removedCount = routes.filter(r => r.status === 'รื้อถอนแล้ว').length;
+  let activeCount = totalRoutes - removedCount;
+  let currentTotalBudget = routes.filter(r => r.status === 'ใช้งานอยู่').reduce((sum, r) => sum + (parseFloat(r.cost || 0) || 0), 0);
+
+  const y1 = document.getElementById('yearCol1').value || 'ปีที่ 1';
+  const y2 = document.getElementById('yearCol2').value || 'ปีที่ 2';
+  const v1 = parseFloat(document.getElementById('valCol1').value) || 0;
+  const v2 = parseFloat(document.getElementById('valCol2').value) || 0;
+  const r1 = parseFloat(document.getElementById('routeCol1').value) || 0;
+  const r2 = parseFloat(document.getElementById('routeCol2').value) || 0;
+
+  const diff1 = currentTotalBudget - v1;
+  const pct1 = v1 > 0 ? ((diff1 / v1) * 100).toFixed(1) : '0.0';
+  const diffRoute1 = activeCount - r1;
+  const pctRoute1 = r1 > 0 ? ((diffRoute1 / r1) * 100).toFixed(1) : '0.0';
+
+  const diff2 = currentTotalBudget - v2;
+  const pct2 = v2 > 0 ? ((diff2 / v2) * 100).toFixed(1) : '0.0';
+  const diffRoute2 = activeCount - r2;
+  const pctRoute2 = r2 > 0 ? ((diffRoute2 / r2) * 100).toFixed(1) : '0.0';
+
+  const removedPct = totalRoutes > 0 ? ((removedCount / totalRoutes) * 100).toFixed(1) : "0.0";
+
+  document.getElementById('pmTotalCurrentBudget').textContent = formatMoney(currentTotalBudget) + ' ฿';
+  document.getElementById('pmRouteSummaryText').textContent = `คงเหลือใช้งาน ${activeCount.toLocaleString()} เส้นทาง (รื้อถอนแล้ว ${removedPct}%)`;
+
+  document.getElementById('pmTitleCol1').textContent = `เปรียบเทียบงบปี ${y1} (${formatMoney(v1)} ฿)`;
+  document.getElementById('pmDiffCol1').textContent = (diff1 <= 0 ? 'ประหยัด ' : 'เกินงบ +') + formatMoney(Math.abs(diff1)) + ' ฿';
+  document.getElementById('pmDiffCol1').style.color = diff1 <= 0 ? '#10b981' : '#f87171';
+  document.getElementById('pmPctCol1').textContent = `${diff1 <= 0 ? '▼ งบลดลง' : '▲ งบเพิ่มขึ้น'} ${pct1}% | เส้นทาง ${diffRoute1 <= 0 ? '' : '+'}${diffRoute1.toLocaleString()} (${pctRoute1}%)`;
+
+  document.getElementById('pmTitleCol2').textContent = `เปรียบเทียบค่าเริ่มแรก ${y2} (${formatMoney(v2)} ฿)`;
+  document.getElementById('pmDiffCol2').textContent = (diff2 <= 0 ? 'ประหยัด ' : 'เกินงบ +') + formatMoney(Math.abs(diff2)) + ' ฿';
+  document.getElementById('pmDiffCol2').style.color = diff2 <= 0 ? '#60a5fa' : '#f87171';
+  document.getElementById('pmPctCol2').textContent = `${diff2 <= 0 ? '▼ งบลดลง' : '▲ งบเพิ่มขึ้น'} ${pct2}% | เส้นทาง ${diffRoute2 <= 0 ? '' : '+'}${diffRoute2.toLocaleString()} (${pctRoute2}%)`;
+
+  const select = document.getElementById('pmProvinceSelect');
+  const currentSelectedVal = select.value;
+  const filterProv = document.getElementById('filterProvince').value;
+  select.innerHTML = '';
+
+  const provKeys = Object.keys(provinceBudgetMap);
+  provKeys.forEach(prov => {
+    const opt = document.createElement('option');
+    opt.value = prov;
+    opt.textContent = 'จังหวัด ' + prov;
+    select.appendChild(opt);
+  });
+
+  if (filterProv !== 'ALL' && provKeys.includes(filterProv)) {
+    select.value = filterProv;
+  } else if (currentSelectedVal && provKeys.includes(currentSelectedVal)) {
+    select.value = currentSelectedVal;
+  }
+
+  renderProvinceDetailInModal();
+}
+
+function renderProvinceDetailInModal() {
+  const selectedProv = document.getElementById('pmProvinceSelect').value;
+  if (!selectedProv) return;
+
+  const baseBudget = provinceBudgetMap[selectedProv] || 0;
+  const routes = Array.isArray(rawRoutes) ? rawRoutes : [];
+
+  const provRoutes = routes.filter(r => String(r.province || '').trim() === selectedProv);
+  let currBudget = 0;
+  const subAreaMap = {};
+
+  provRoutes.forEach(r => {
+    const areaName = r.district || 'ไม่ระบุพื้นที่';
+    if (!subAreaMap[areaName]) {
+      subAreaMap[areaName] = { total: 0, removed: 0, active: 0, baseCost: districtBudgetMap[areaName] || 0, currCost: 0 };
+    }
+    const cCost = parseFloat(r.cost || 0) || 0;
+    subAreaMap[areaName].total++;
+
+    if (r.status === 'รื้อถอนแล้ว') {
+      subAreaMap[areaName].removed++;
+    } else {
+      subAreaMap[areaName].active++;
+      subAreaMap[areaName].currCost += cCost;
+      currBudget += cCost;
+    }
+  });
+
+  const diff = currBudget - baseBudget;
+  const pct = baseBudget > 0 ? ((diff / baseBudget) * 100).toFixed(1) : "0.0";
+  const isOver = diff > 0;
+
+  document.getElementById('pmProvBaseBudget').textContent = formatMoney(baseBudget) + ' ฿';
+  document.getElementById('pmProvCurrBudget').textContent = formatMoney(currBudget) + ' ฿';
+  
+  const diffEl = document.getElementById('pmProvDiffBudget');
+  diffEl.textContent = (isOver ? '+' : '-') + formatMoney(Math.abs(diff)) + ` ฿ (${isOver ? '+' : ''}${pct}%)`;
+  diffEl.style.color = isOver ? '#f87171' : '#34d399';
+
+  const badgeEl = document.getElementById('pmProvinceBadge');
+  if (isOver) {
+    badgeEl.innerHTML = `<span style="background:rgba(239, 68, 68, 0.2); color:#f87171; border:1px solid #ef4444; padding:6px 14px; border-radius:20px; font-size:0.85rem; font-weight:bold;">🔴 เกินงบตั้งต้น (+${pct}%)</span>`;
+  } else {
+    badgeEl.innerHTML = `<span style="background:rgba(16, 185, 129, 0.2); color:#34d399; border:1px solid #10b981; padding:6px 14px; border-radius:20px; font-size:0.85rem; font-weight:bold;">🟢 บรรลุเป้าประหยัด (${pct}%)</span>`;
+  }
+
+  const barEl = document.getElementById('pmComparisonBar');
+  const barLabels = document.getElementById('pmBarLabels');
+  if (isOver) {
+    barLabels.innerHTML = `<span>งบตั้งต้น</span><span style="color:#f87171;">เกินงบ +${formatMoney(diff)} ฿</span>`;
+    barEl.innerHTML = `<div style="width:100%; background:#ef4444; height:100%;"></div>`;
+  } else {
+    barLabels.innerHTML = `<span style="color:#34d399;">งบปัจจุบันคงเหลือ</span><span style="color:#10b981;">ประหยัด ${formatMoney(Math.abs(diff))} ฿</span>`;
+    barEl.innerHTML = `<div style="width:100%; background:#10b981; height:100%;"></div>`;
+  }
+
+  document.getElementById('pmNarrativeBox').innerHTML = `💡 <b>รายงานจังหวัด${selectedProv}:</b> งบตั้งต้นจากชีต (Col E) อยู่ที่ <b>${formatMoney(baseBudget)} บาท</b> และงบประมาณปัจจุบันหลัง Cleansing อยู่ที่ <b>${formatMoney(currBudget)} บาท</b> (${isOver ? 'เกินงบตั้งต้น' : 'ประหยัดงบได้'} ${formatMoney(Math.abs(diff))} บาท).`;
+
+  const tbody = document.getElementById('pmSubAreaTableBody');
+  tbody.innerHTML = '';
+  Object.keys(subAreaMap).forEach(area => {
+    const item = subAreaMap[area];
+    const areaDiff = item.currCost - item.baseCost;
+    const tr = document.createElement('tr');
+    tr.style.borderBottom = '1px solid #1e293b';
+    tr.innerHTML = `
+      <td style="padding:11px 14px; font-weight:600; color:#f3f4f6;">${area}</td>
+      <td style="padding:11px 14px; text-align:center;">${item.total.toLocaleString()}</td>
+      <td style="padding:11px 14px; text-align:center; color:#f87171;">${item.removed.toLocaleString()}</td>
+      <td style="padding:11px 14px; text-align:center; color:#34d399;">${item.active.toLocaleString()}</td>
+      <td style="padding:11px 14px; text-align:right;">${formatMoney(item.baseCost)}</td>
+      <td style="padding:11px 14px; text-align:right; color:#E5C15A;">${formatMoney(item.currCost)}</td>
+      <td style="padding:11px 14px; text-align:right; font-weight:bold; color:${areaDiff > 0 ? '#f87171' : '#34d399'};">${(areaDiff > 0 ? '+' : '') + formatMoney(areaDiff)}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+function closeBudgetPresentationModal() {
+  document.getElementById('budgetPresentationModal').style.display = 'none';
+}
+
+// 7. ฟังก์ชันจัดการ Modal สรุปเส้นทางต่างๆ
+function openTotalPresentationModal() {
+  if (typeof getActiveFilterDescription === 'function') {
+    document.getElementById('totalModalFilterLabel').textContent = getActiveFilterDescription();
+  }
+  const routes = Array.isArray(filteredRoutes) && filteredRoutes.length > 0 ? filteredRoutes : rawRoutes;
+  const totalGlobal = routes.length;
+
+  const provMap = {};
+  routes.forEach(r => {
+    let p = r.province || 'ไม่ระบุจังหวัด';
+    provMap[p] = (provMap[p] || 0) + 1;
+  });
+
+  const tbody = document.getElementById('totalModalTableBody');
+  tbody.innerHTML = '';
+
+  Object.keys(provMap).sort().forEach(prov => {
+    let count = provMap[prov];
+    let pct = totalGlobal > 0 ? ((count / totalGlobal) * 100).toFixed(1) : '0.0';
+    let tr = document.createElement('tr');
+    tr.style.borderBottom = '1px solid #374151';
+    tr.innerHTML = `
+      <td style="padding: 10px 14px; font-weight: 600;">จังหวัด ${prov}</td>
+      <td style="padding: 10px 14px; text-align: right; color: #B7C0CA; font-weight: bold;">${count.toLocaleString()} เส้นทาง</td>
+      <td style="padding: 10px 14px; text-align: right; color: #E5C15A; font-weight: bold;">${pct}%</td>
+    `;
+    tbody.appendChild(tr);
+  });
+
+  document.getElementById('totalPresentationModal').style.display = 'flex';
+}
+function closeTotalModal() { document.getElementById('totalPresentationModal').style.display = 'none'; }
+
+function openRemovedPresentationModal() {
+  if (typeof getActiveFilterDescription === 'function') {
+    document.getElementById('removedModalFilterLabel').textContent = getActiveFilterDescription();
+  }
+  const routes = Array.isArray(filteredRoutes) && filteredRoutes.length > 0 ? filteredRoutes : rawRoutes;
+  const removedRoutes = routes.filter(r => r.status === 'รื้อถอนแล้ว');
+  const totalRemovedGlobal = removedRoutes.length;
+
+  const provMap = {};
+  removedRoutes.forEach(r => {
+    let p = r.province || 'ไม่ระบุจังหวัด';
+    provMap[p] = (provMap[p] || 0) + 1;
+  });
+
+  const tbody = document.getElementById('removedModalTableBody');
+  tbody.innerHTML = '';
+
+  Object.keys(provMap).sort().forEach(prov => {
+    let count = provMap[prov];
+    let pct = totalRemovedGlobal > 0 ? ((count / totalRemovedGlobal) * 100).toFixed(1) : '0.0';
+    let tr = document.createElement('tr');
+    tr.style.borderBottom = '1px solid #374151';
+    tr.innerHTML = `
+      <td style="padding: 10px 14px; font-weight: 600;">จังหวัด ${prov}</td>
+      <td style="padding: 10px 14px; text-align: right; color: #EF476F; font-weight: bold;">${count.toLocaleString()} เส้นทาง</td>
+      <td style="padding: 10px 14px; text-align: right; color: #E5C15A; font-weight: bold;">${pct}%</td>
+    `;
+    tbody.appendChild(tr);
+  });
+
+  document.getElementById('removedPresentationModal').style.display = 'flex';
+}
+function closeRemovedModal() { document.getElementById('removedPresentationModal').style.display = 'none'; }
+
+function openRemainingPresentationModal() {
+  if (typeof getActiveFilterDescription === 'function') {
+    document.getElementById('remainingModalFilterLabel').textContent = getActiveFilterDescription();
+  }
+  const routes = Array.isArray(filteredRoutes) && filteredRoutes.length > 0 ? filteredRoutes : rawRoutes;
+  const activeRoutes = routes.filter(r => r.status !== 'รื้อถอนแล้ว');
+  const totalActiveGlobal = activeRoutes.length;
+
+  const provMap = {};
+  activeRoutes.forEach(r => {
+    let p = r.province || 'ไม่ระบุจังหวัด';
+    provMap[p] = (provMap[p] || 0) + 1;
+  });
+
+  const tbody = document.getElementById('remainingModalTableBody');
+  tbody.innerHTML = '';
+
+  Object.keys(provMap).sort().forEach(prov => {
+    let count = provMap[prov];
+    let pct = totalActiveGlobal > 0 ? ((count / totalActiveGlobal) * 100).toFixed(1) : '0.0';
+    let tr = document.createElement('tr');
+    tr.style.borderBottom = '1px solid #374151';
+    tr.innerHTML = `
+      <td style="padding: 10px 14px; font-weight: 600;">จังหวัด ${prov}</td>
+      <td style="padding: 10px 14px; text-align: right; color: #A8B89A; font-weight: bold;">${count.toLocaleString()} เส้นทาง</td>
+      <td style="padding: 10px 14px; text-align: right; color: #E5C15A; font-weight: bold;">${pct}%</td>
+    `;
+    tbody.appendChild(tr);
+  });
+
+  document.getElementById('remainingPresentationModal').style.display = 'flex';
+}
+function closeRemainingModal() { document.getElementById('remainingPresentationModal').style.display = 'none'; }
+
+function openCopperPresentationModal() {
+  if (typeof getActiveFilterDescription === 'function') {
+    document.getElementById('copperModalFilterLabel').textContent = getActiveFilterDescription();
+  }
+  const volText = document.getElementById('copperVolDisplay').innerText;
+  document.getElementById('copperModalVolText').textContent = volText;
+  document.getElementById('copperPresentationModal').style.display = 'flex';
+}
+function closeCopperPresentationModal() { document.getElementById('copperPresentationModal').style.display = 'none'; }
+
+// 8. Event Listener สำหรับปุ่ม ESC เพื่อปิด Modal ทั้งหมด
+document.addEventListener('keydown', function(event) {
+  if (event.key === 'Escape') {
+    closeTotalModal();
+    closeRemovedModal();
+    closeRemainingModal();
+    if (typeof closeRatioPresentationModal === 'function') closeRatioPresentationModal();
+    closeBudgetPresentationModal();
+    closeCopperPresentationModal();
+  }
+});
+
+// 9. เริ่มต้นเรียกใช้งานเมื่อเปิดหน้าเว็บ
+window.onload = function() {
+  loadDashboardData();
+};
+</script>
+
+<!-- Modal ปริมาตรทองแดง -->
+<div id="copperPresentationModal" onclick="if(event.target === this) closeCopperPresentationModal();" style="display:none; position:fixed; z-index:99999; inset:0; background:rgba(9,13,22,.90); align-items:center; justify-content:center; padding:16px;">
+  <div style="background:#2b3038; border:1px solid #4b5563; border-radius:16px; padding:28px; max-width:560px; width:100%; color:#fff;">
+    <h3 style="color:#B7C0CA; margin:0 0 6px 0;">⚖️ รายงานปริมาตรทองแดงจากการรื้อถอน</h3>
+    <p id="copperModalFilterLabel" style="font-size:0.82rem; color:#9ca3af; margin:0 0 16px 0;">ขอบเขตข้อมูล: ทุกพื้นที่</p>
+    <div style="background:#242830; padding:18px; border-radius:10px; border-left:4px solid #E5C15A; margin-bottom:16px;">
+      <div style="font-size:0.85rem; color:#9ca3af;">ปริมาตรสายทองแดงที่รื้อถอนออกไปแล้ว</div>
+      <p id="copperModalVolText" style="font-size:1.85rem; font-weight:bold; color:#E5C15A; margin:6px 0 0 0;">0.00 cm³</p>
+    </div>
+    <button onclick="closeCopperPresentationModal()" style="background:#dc2626; color:#fff; border:none; padding:8px 18px; border-radius:6px; cursor:pointer; font-weight:bold;">✕ ปิดหน้าต่าง</button>
+  </div>
+</div>
+
+</body>
+</html>
